@@ -21,7 +21,7 @@ it('invalid model output is repaired through compiler diagnostics', async () => 
   const w = await store.get(id); expect(w.status).toBe('compiled'); expect(w.stages.filter(s => s.id.startsWith('compile-')).map(s => s.status)).toEqual(['failed', 'completed']); await store.close();
 });
 it('failed generation never publishes a fallback story', async () => {
-  const { store, id } = await setup(); await new WorkflowRunner(store, client([JSON.stringify(brief), 'invalid', 'invalid'])).run(id, '帮工人传话', new AbortController().signal);
+  const { store, id } = await setup(); await new WorkflowRunner(store, client([JSON.stringify(brief), 'invalid', 'invalid', 'invalid', 'invalid'])).run(id, '帮工人传话', new AbortController().signal);
   const w = await store.get(id); expect(w.status).toBe('failed'); expect(w.saved).toEqual({}); expect(w.versions).toHaveLength(0); await store.close();
 });
 it('repairs invalid source line references with exact feedback and retains failed output', async () => {
@@ -35,14 +35,31 @@ it('repairs invalid source line references with exact feedback and retains faile
   expect(inputs[1].at(-1).content).toContain('ending[0].source_lines'); expect(inputs[1].at(-1).content).toContain('1–1');
   expect(w.versions).toHaveLength(1); await store.close();
 });
-it('stops after two structural repair attempts without publishing', async () => {
+it('stops after three structural repair attempts without publishing', async () => {
   const { store, id } = await setup();
-  await new WorkflowRunner(store, client(['{}', '{}', '{}'])).run(id, '故事', new AbortController().signal);
-  const w = await store.get(id); expect(w.status).toBe('failed'); expect(w.stages).toHaveLength(3); expect(w.versions).toHaveLength(0); await store.close();
+  await new WorkflowRunner(store, client(['{}', '{}', '{}', '{}'])).run(id, '故事', new AbortController().signal);
+  const w = await store.get(id); expect(w.status).toBe('failed'); expect(w.stages).toHaveLength(4); expect(w.versions).toHaveLength(0); await store.close();
 });
 it('editing creates a proposal; acceptance is explicit and versioned', async () => {
   const { store, id } = await setup(); await store.publishInitial(id, { 'story.dsl': examples[0].dsl }, '口信');
   const old = examples[0].dsl.split('\n')[0];
   await new WorkflowRunner(store, client([JSON.stringify({ reply: '调整标题', edits: [{ path: 'story.dsl', old, new: 'story "远方的口信"' }] })])).run(id, '标题改成远方的口信', new AbortController().signal);
   const w = await store.get(id); expect(w.proposal).not.toBeNull(); expect(w.saved['story.dsl']).toBe(examples[0].dsl); await store.accept(id); expect((await store.get(id)).versions).toHaveLength(2); await store.close();
+});
+
+it('repairs invalid edit path and nonmatching text up to third retry without user input', async () => {
+  const { store, id } = await setup(); await store.publishInitial(id, { 'story.dsl': examples[0].dsl }, '口信');
+  const old = examples[0].dsl.split('\n')[0];
+  const edit = (path: string, value: string) => JSON.stringify({ reply: '调整标题', edits: [{ path, old: value, new: 'story "新的标题"' }] });
+  const inputs: any[] = [], outputs = [edit('story.dsl > say', old), edit('story.dsl', '不存在的片段'), '{}', edit('story.dsl', old)];
+  const model: ModelClient = { async complete(messages, delta) { inputs.push(messages); const text = outputs.shift()!; delta(text); return { text, finishReason: 'stop', usage: null }; } };
+  await new WorkflowRunner(store, model).run(id, '换个标题', new AbortController().signal);
+  const w = await store.get(id); expect(w.proposal).not.toBeNull(); expect(w.saved['story.dsl']).toBe(examples[0].dsl);
+  expect(inputs).toHaveLength(4); expect(inputs[1].at(-1).content).toContain('enum'); expect(inputs[2].at(-1).content).toContain('精确且唯一匹配');
+  expect(w.traces).toHaveLength(4); await store.close();
+});
+it('exhausted edit retries leave saved source and proposal unchanged', async () => {
+ const { store, id } = await setup(); await store.publishInitial(id, { 'story.dsl': examples[0].dsl }, '口信');
+ await new WorkflowRunner(store, client(['{}','{}','{}','{}'])).run(id,'修改台词',new AbortController().signal);
+ const w = await store.get(id); expect(w.status).toBe('failed'); expect(w.proposal).toBeNull(); expect(w.versions).toHaveLength(1); await store.close();
 });

@@ -70,7 +70,7 @@ export default {
     const globalBudget = env.QUOTAS.getByName('global');
     if (!await globalBudget.increment('day:' + new Date().toISOString().slice(0, 10), Number(env.DAILY_MODEL_CALLS) || 200)) { await quota.release(op); return reply(503, 'SERVICE_BUSY'); }
     try {
-      const upstream = await fetch('https://api.deepseek.com/chat/completions', { method: 'POST', headers: { Authorization: 'Bearer ' + env.DEEPSEEK_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: env.MODEL || 'deepseek-flash', messages: body.messages.map((m: any) => ({ role: m.role, content: m.content })), stream: true, stream_options: { include_usage: true }, max_tokens: 16000, thinking: { type: 'disabled' } }), signal: AbortSignal.timeout(300000) });
+      const upstream = await fetch('https://api.deepseek.com/chat/completions', { method: 'POST', headers: { Authorization: 'Bearer ' + env.DEEPSEEK_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: env.MODEL || 'deepseek-flash', messages: body.messages.map((m: any) => ({ role: m.role, content: m.content })), ...(body.response_format?.type === 'json_object' ? { response_format: { type: 'json_object' } } : {}), stream: true, stream_options: { include_usage: true }, max_tokens: 16000, thinking: { type: 'disabled' } }), signal: AbortSignal.timeout(300000) });
       if (!upstream.ok || !upstream.body) { await quota.release(op); return reply(502, 'UPSTREAM_UNAVAILABLE'); }
       const reader = upstream.body.getReader();
       const decoder = new TextDecoder(); let tail = '', released = false;

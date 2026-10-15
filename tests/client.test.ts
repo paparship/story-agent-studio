@@ -14,3 +14,10 @@ it('does not add vendor-specific thinking options to generic providers', async (
 it('rejects API URLs containing credentials or insecure remote HTTP', () => {
   for (const base_url of ['http://example.com', 'https://secret@example.com', 'https://example.com?key=secret']) expect(() => validateProvider({ base_url, api_key: 'test', model: 'model' })).toThrow();
 });
+
+it('requests JSON mode only for structured stages', async () => {
+ const requests: any[] = [];
+ const c = new OpenAIClient('https://example.com', {}, 'deepseek-flash', async (_url, init) => { requests.push(JSON.parse(init!.body as string)); return response('data: {"choices":[{"delta":{"content":"{}"},"finish_reason":"stop"}]}\n\n'); });
+ await c.complete([],()=>{},undefined,{json:true}); await c.complete([],()=>{});
+ expect(requests[0].response_format).toEqual({type:'json_object'}); expect(requests[1]).not.toHaveProperty('response_format');
+});

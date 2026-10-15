@@ -8,3 +8,9 @@ Added only after a structure validation failure:
 Applies to story understanding and chapter planning. Maximum two repairs.
 Each attempt retains its full input/output, prompt hash and validation error in the workspace stages/traces.
 Line-reference errors now include collection index, valid range and actual references.
+
+2026-10-16 — 修改提案协议校验与三次重试
+原因：真实录制中 path 混入节点位置，既有文件信息已足够纠错。
+变更：编辑提示追加动态 JSON Schema（path enum=当前保存文件）；JSON 阶段启用 JSON 模式；Schema/匹配错误自动反馈，最多重试3次。编译修正同样最多3次。首次尝试另计。
+旧：仅自然语言要求 path 为现有 DSL 路径；格式/匹配失败立即终止。
+新：完整原 prompt 保留，并追加 editSchema(Object.keys(w.saved)) 的全量 JSON；每次完整输入和输出仍保存到 traces。

@@ -1,3 +1,4 @@
+import Ajv from 'ajv';
 import promptsData from '../data/prompts.json';
 import catalog from '../data/catalog.json';
 import reference from '../data/dsl-reference.txt?raw';
@@ -7,6 +8,10 @@ import { Diagnostic, hash, type Json } from '../compiler/compiler';
 import type { ModelClient, Message } from '../llm/client';
 import { parseBrief, unwrap, validatePlan } from './contracts';
 const prompts = promptsData as unknown as Json;
+export const MAX_RETRIES = 3;
+export function editSchema(paths: string[]) {
+  return { type: 'object', additionalProperties: false, required: ['reply', 'edits'], properties: { reply: { type: 'string' }, edits: { type: 'array', maxItems: 30, items: { type: 'object', additionalProperties: false, required: ['path', 'old', 'new'], properties: { path: { type: 'string', enum: paths }, old: { type: 'string', minLength: 1 }, new: { type: 'string' } } } } } };
+}
 export type WorkflowEvent = { kind: string; [key: string]: any };
 export function renderPrompt(stage: string, values: Record<string, string>): Message[] {
   const spec = prompts.manifest.stages[stage]; if (!spec) throw Error('未知工作流阶段');
@@ -16,11 +21,11 @@ export class WorkflowRunner {
   constructor(private store: WorkspaceStore, private client: ModelClient, private emit: (id: string, event: WorkflowEvent) => void = () => {}) {}
   private async status(id: string, status: string, error?: string) { await this.store.update(id, null, w => { w.status = status; const card = [...w.chat].reverse().find(c => c.role === 'workflow'); if (card) { card.status = status; if (status !== 'running') card.stage_end = w.stages.length; } }); this.emit(id, { kind: 'run_status', status, error }); }
   private async chat(id: string, item: Json) { await this.store.update(id, null, w => { w.chat.push({ id: crypto.randomUUID(), time: Date.now() / 1000, ...item }); }); this.emit(id, { kind: 'chat_updated' }); }
-  private async call(id: string, label: string, messages: Message[], signal: AbortSignal) {
+  private async call(id: string, label: string, messages: Message[], signal: AbortSignal, json = false) {
     signal.throwIfAborted(); const prefix = label.includes('理解') || label.includes('规划') ? 'understand' : label.includes('修正') ? 'repair' : 'generate'; const stage = prefix + '-' + crypto.randomUUID(); let output = ''; const started = Date.now();
     await this.store.update(id, null, w => { w.stages.push({ id: stage, label, input: messages, output: '', status: 'running' }); }); this.emit(id, { kind: 'stage_started', stage, label });
     try {
-      const result = await this.client.complete(messages, text => { output += text; this.emit(id, { kind: 'delta', stage, text }); }, signal);
+      const result = await this.client.complete(messages, text => { output += text; this.emit(id, { kind: 'delta', stage, text }); }, signal, json ? { json: true } : undefined);
       await this.store.update(id, null, w => { Object.assign(w.stages.find(s => s.id === stage)!, { output, status: 'completed', duration_ms: Date.now() - started }); w.traces.push({ id: stage, timestamp: Date.now() / 1000, label, messages, response: output, usage: result.usage, prompt_hash: hash(JSON.stringify(messages)) }); });
       this.emit(id, { kind: 'stage_finished', stage, output }); return output;
     } catch (e) {
@@ -46,28 +51,28 @@ export class WorkflowRunner {
   }
   private async structured<T>(id: string, label: string, messages: Message[], validate: (text: string) => T, signal: AbortSignal): Promise<T> {
     let input = messages;
-    for (let attempt = 0; attempt <= 2; attempt++) {
-      const output = await this.call(id, attempt ? `${label} · 格式修正 ${attempt}` : label, input, signal);
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      const output = await this.call(id, attempt ? `${label} · 格式修正 ${attempt}` : label, input, signal, true);
       try { return validate(output); }
       catch (e) {
         const diagnostic = e instanceof Error ? e.message : String(e);
         await this.store.update(id, null, w => { Object.assign(w.stages[w.stages.length - 1], { status: 'failed', validation_error: diagnostic }); });
-        if (attempt === 2) throw Error(`${label}校验未通过：${diagnostic}`);
+        if (attempt === MAX_RETRIES) throw Error(`${label}校验未通过：${diagnostic}`);
         input = [...messages, { role: 'assistant', content: output }, { role: 'user', content: `结构校验反馈：${diagnostic}\n请根据原始输入和输出契约修正，返回完整 JSON。` }];
       }
     }
     throw Error('结构校验未完成');
   }
   private async compileWithRepair(id: string, initial: string, path: string, values: Record<string, string>, signal: AbortSignal) {
-    let source = unwrap(initial); const seen = new Set<string>();
-    for (let attempt = 0; attempt <= 2; attempt++) {
+    let source = unwrap(initial);
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       signal.throwIfAborted(); const stage = `compile-${crypto.randomUUID()}`; await this.store.update(id, null, w => { w.stages.push({ id: stage, label: '编译校验', output: '', status: 'running' }); }); this.emit(id, { kind: 'stage_started', stage, label: '编译校验' });
       try { compileFiles({ [path]: source }); await this.store.update(id, null, w => { Object.assign(w.stages.find(s => s.id === stage)!, { status: 'completed', output: '编译和运行配置校验通过' }); }); this.emit(id, { kind: 'stage_finished', stage, output: '编译和运行配置校验通过' }); return source; }
       catch (e) {
         const diagnostics = e instanceof Diagnostic ? e.toJSON() : { message: String(e) };
         await this.store.update(id, null, w => { Object.assign(w.stages.find(s => s.id === stage)!, { status: 'failed', output: JSON.stringify(diagnostics) }); }); this.emit(id, { kind: 'stage_finished', stage, status: 'failed', output: JSON.stringify(diagnostics) });
-        if (attempt === 2 || seen.has(source)) throw Error('编译修正未收敛：' + (e instanceof Error ? e.message : String(e)));
-        seen.add(source); source = unwrap(await this.call(id, `修正 DSL · ${attempt + 1}`, renderPrompt('repair', { ...values, current_dsl: source, diagnostics: JSON.stringify([diagnostics]) }), signal));
+        if (attempt === MAX_RETRIES) throw Error('编译修正未收敛：' + (e instanceof Error ? e.message : String(e)));
+        source = unwrap(await this.call(id, `修正 DSL · ${attempt + 1}`, renderPrompt('repair', { ...values, current_dsl: source, diagnostics: JSON.stringify([diagnostics]) }), signal));
       }
     }
     throw Error('编译未完成');
@@ -102,15 +107,22 @@ export class WorkflowRunner {
       { role: 'system', content: '你是游戏叙事工作台的剧情助手。根据作者请求回答当前故事的问题，或提出 DSL 修改。输出 JSON：{"reply":"给作者的简洁说明","edits":[{"path":"现有 DSL 路径","old":"原文中唯一匹配的片段","new":"替换内容"}]}。提问时 edits 为空；修改时保留其余剧情。作者确认后才会保存修改。\n语法：\n' + reference + '\n能力：\n' + capabilities },
       { role: 'user', content: JSON.stringify({ files: w.saved, memories: w.memory, recent_chat: w.chat.slice(-6).map(c => ({ role: c.role, text: c.text })), request: message }) }
     ];
-    const result = JSON.parse(unwrap(await this.call(id, '理解与调整故事', messages, signal)));
-    if (typeof result.reply !== 'string' || !Array.isArray(result.edits) || result.edits.length > 30) throw Error('助手输出格式不正确');
+    const schema = editSchema(Object.keys(w.saved));
+    const validate = new Ajv({ allErrors: true }).compile<{ reply: string; edits: { path: string; old: string; new: string }[] }>(schema);
+    messages[0].content += '\n输出 JSON 必须符合以下 Schema；path 从 enum 中选择真实文件名：\n' + JSON.stringify(schema);
+    const { result, files } = await this.structured(id, '理解与调整故事', messages, text => {
+      const result = JSON.parse(unwrap(text));
+      if (!validate(result)) throw Error('提案 JSON Schema 校验失败：' + JSON.stringify(validate.errors));
+      const files = { ...w.saved };
+      for (const e of result.edits) {
+        const start = files[e.path].indexOf(e.old);
+        if (start < 0 || files[e.path].indexOf(e.old, start + e.old.length) >= 0)
+          throw Error(`文件 ${e.path} 的 old 片段需要与所提供源码精确且唯一匹配；请依据 files 中的真实内容重新选择片段。`);
+        files[e.path] = files[e.path].slice(0, start) + e.new + files[e.path].slice(start + e.old.length);
+      }
+      return { result, files };
+    }, signal);
     if (!result.edits.length) { await this.chat(id, { type: 'assistant', role: 'assistant', text: result.reply }); await this.status(id, 'compiled'); return; }
-    const files = { ...w.saved };
-    for (const e of result.edits) {
-      if (!Object.hasOwn(files, e.path) || typeof e.old !== 'string' || !e.old || typeof e.new !== 'string') throw Error('修改提案包含无效文件或片段');
-      const start = files[e.path].indexOf(e.old); if (start < 0 || files[e.path].indexOf(e.old, start + e.old.length) >= 0) throw Error('修改片段未唯一匹配，请重新请求调整');
-      files[e.path] = files[e.path].slice(0, start) + e.new + files[e.path].slice(start + e.old.length);
-    }
     for (const path of Object.keys(files)) if (files[path] !== w.saved[path]) files[path] = await this.compileWithRepair(id, files[path], path, { ...this.values(w.story, w.answers), confirmed_brief: JSON.stringify({ request: message, original: w.brief }) }, signal);
     signal.throwIfAborted(); await this.store.stage(id, base, files, result.reply); this.emit(id, { kind: 'proposal_ready' }); await this.chat(id, { type: 'assistant', role: 'assistant', text: result.reply, proposal_id: (await this.store.get(id)).proposal!.id }); await this.status(id, 'compiled');
   }

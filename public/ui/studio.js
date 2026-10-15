@@ -531,7 +531,8 @@ function buildWorkflowCard(item) {
   let activeStageObj = null;
   for (let i = 0; i < stepDefs.length; i++) {
     const def = stepDefs[i];
-    const st = findStage(def.key);
+    const latestRepair = stages.filter(s => s.id?.startsWith('repair') && s.status === 'running').at(-1);
+    const st = def.key === 'generate' && latestRepair ? latestRepair : findStage(def.key);
     const cell = document.createElement('button');
     let stStatus = st?.status || (wfRunning && stages.length === 0 && i === 0 ? 'running' : 'pending');
     if (item.status === 'compiled' && def.key === 'compile') stStatus = 'completed';
@@ -552,7 +553,7 @@ function buildWorkflowCard(item) {
     }
 
     const lbl = document.createElement('span');
-    lbl.textContent = def.label;
+    lbl.textContent = st?.id?.startsWith('repair') ? '自动修正中' : def.label;
     cell.append(lbl);
 
     cell.onclick = () => {
