@@ -44,6 +44,20 @@ export class WorkflowRunner {
   private values(story: string, answers: string) {
     return { story, story_with_lines: story.split(/\r?\n/).map((l, i) => `${i + 1}: ${l}`).join('\n'), user_answers: answers || '尚无补充', capabilities, resource_catalog: JSON.stringify(catalog), brief_contract: prompts['brief-contract.txt'], dsl_reference: reference, target_context: JSON.stringify({ dsl: '0.3-draft', target: 'playground-quests-v3', locale: 'zh-CN' }) };
   }
+  private async structured<T>(id: string, label: string, messages: Message[], validate: (text: string) => T, signal: AbortSignal): Promise<T> {
+    let input = messages;
+    for (let attempt = 0; attempt <= 2; attempt++) {
+      const output = await this.call(id, attempt ? `${label} · 格式修正 ${attempt}` : label, input, signal);
+      try { return validate(output); }
+      catch (e) {
+        const diagnostic = e instanceof Error ? e.message : String(e);
+        await this.store.update(id, null, w => { Object.assign(w.stages[w.stages.length - 1], { status: 'failed', validation_error: diagnostic }); });
+        if (attempt === 2) throw Error(`${label}校验未通过：${diagnostic}`);
+        input = [...messages, { role: 'assistant', content: output }, { role: 'user', content: `结构校验反馈：${diagnostic}\n请根据原始输入和输出契约修正，返回完整 JSON。` }];
+      }
+    }
+    throw Error('结构校验未完成');
+  }
   private async compileWithRepair(id: string, initial: string, path: string, values: Record<string, string>, signal: AbortSignal) {
     let source = unwrap(initial); const seen = new Set<string>();
     for (let attempt = 0; attempt <= 2; attempt++) {
@@ -62,7 +76,7 @@ export class WorkflowRunner {
     if (!story.trim() || story.length > 30000) throw Error('请输入 1–30000 字的故事');
     const existing = await this.store.get(id), values = this.values(story, answer); let brief = existing.brief;
     if (!answer || !brief) {
-      brief = parseBrief(await this.call(id, '理解故事', renderPrompt('understand', values), signal), catalog, story.split(/\r?\n/).length);
+      brief = await this.structured(id, '理解故事', renderPrompt('understand', values), text => parseBrief(text, catalog, story.split(/\r?\n/).length), signal);
       await this.store.update(id, null, w => { w.brief = brief; w.story = story; if (/^(新建|自定义|新故事)/.test(w.title)) w.title = brief!.title; }); this.emit(id, { kind: 'story_metadata', title: (await this.store.get(id)).title, summary: brief.summary });
       if (brief.questions.length) { await this.chat(id, { type: 'clarification', role: 'clarification', questions: brief.questions.map((q: Json, i: number) => ({ ...q, id: 'q_' + (i + 1), options: [] })) }); await this.status(id, 'awaiting_input'); return; }
     }
@@ -73,7 +87,7 @@ export class WorkflowRunner {
     await this.chat(id, { type: 'assistant', role: 'assistant', text: '故事已生成并通过编译，可以查看节点图、编辑 DSL 或启动试玩。' }); await this.status(id, 'compiled');
   }
   private async main(id: string, story: string, signal: AbortSignal) {
-    const values = this.values(story, ''), plan = validatePlan(await this.call(id, '规划章节', renderPrompt('main_plan', values), signal)), files: Record<string, string> = {};
+    const values = this.values(story, ''), plan = await this.structured(id, '规划章节', renderPrompt('main_plan', values), validatePlan, signal), files: Record<string, string> = {};
     for (const chapter of plan.chapters) {
       const cv = { ...values, plan: JSON.stringify(plan), chapter: JSON.stringify(chapter), confirmed_brief: JSON.stringify(chapter) };
       files[chapter.file] = await this.compileWithRepair(id, await this.call(id, '生成章节 · ' + chapter.title, renderPrompt('main_chapter', cv), signal), chapter.file, cv, signal);

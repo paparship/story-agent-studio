@@ -13,10 +13,10 @@ export function parseBrief(text: string, catalog: Json, lineCount: number): Json
   assert(Object.keys(b).filter(k => !['title', 'summary'].includes(k)).sort().join() === Object.keys(shapes).sort().join(), '理解输出需要契约中的八个集合字段');
   for (const [key, shape] of Object.entries(shapes)) {
     assert(Array.isArray(b[key]), key + ' 需要数组');
-    for (const item of b[key]) {
+    for (const [index, item] of b[key].entries()) {
       assert(item && Object.keys(item).sort().join() === Object.keys(shape).sort().join(), key + ' 条目字段不符');
       for (const [field, type] of Object.entries(shape)) assert(type === 'array' ? Array.isArray(item[field]) : type === 'nullable' ? item[field] === null || typeof item[field] === 'string' : typeof item[field] === type, key + '.' + field + ' 类型不符');
-      if (item.source_lines) assert(item.source_lines.every((n: any) => Number.isInteger(n) && n >= 1 && n <= lineCount), 'source_lines 超出原文行号');
+      if (item.source_lines) assert(item.source_lines.every((n: any) => Number.isInteger(n) && n >= 1 && n <= lineCount), `${key}[${index}].source_lines 超出原文行号：有效范围 1–${lineCount}，实际 ${JSON.stringify(item.source_lines)}`);
     }
   }
   const actors = b.actors.map((x: Json) => x.id), events = b.events.map((x: Json) => x.id), resources = catalog.resources.map((x: Json) => x.id);

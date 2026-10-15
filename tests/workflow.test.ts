@@ -24,6 +24,22 @@ it('failed generation never publishes a fallback story', async () => {
   const { store, id } = await setup(); await new WorkflowRunner(store, client([JSON.stringify(brief), 'invalid', 'invalid'])).run(id, '帮工人传话', new AbortController().signal);
   const w = await store.get(id); expect(w.status).toBe('failed'); expect(w.saved).toEqual({}); expect(w.versions).toHaveLength(0); await store.close();
 });
+it('repairs invalid source line references with exact feedback and retains failed output', async () => {
+  const { store, id } = await setup();
+  const invalid = JSON.stringify({ ...brief, ending: [{ description: '结束', source_lines: [2] }] });
+  const inputs: any[] = [], outputs = [invalid, JSON.stringify(brief), examples[0].dsl];
+  const model: ModelClient = { async complete(messages, delta) { inputs.push(messages); const text = outputs.shift()!; delta(text); return { text, finishReason: 'stop', usage: null }; } };
+  await new WorkflowRunner(store, model).run(id, '一行故事。第二句话。', new AbortController().signal);
+  const w = await store.get(id);
+  expect(w.status).toBe('compiled'); expect(w.stages[0].status).toBe('failed'); expect(w.stages[0].output).toBe(invalid);
+  expect(inputs[1].at(-1).content).toContain('ending[0].source_lines'); expect(inputs[1].at(-1).content).toContain('1–1');
+  expect(w.versions).toHaveLength(1); await store.close();
+});
+it('stops after two structural repair attempts without publishing', async () => {
+  const { store, id } = await setup();
+  await new WorkflowRunner(store, client(['{}', '{}', '{}'])).run(id, '故事', new AbortController().signal);
+  const w = await store.get(id); expect(w.status).toBe('failed'); expect(w.stages).toHaveLength(3); expect(w.versions).toHaveLength(0); await store.close();
+});
 it('editing creates a proposal; acceptance is explicit and versioned', async () => {
   const { store, id } = await setup(); await store.publishInitial(id, { 'story.dsl': examples[0].dsl }, '口信');
   const old = examples[0].dsl.split('\n')[0];
