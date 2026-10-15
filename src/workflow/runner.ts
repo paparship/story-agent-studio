@@ -14,7 +14,7 @@ export function renderPrompt(stage: string, values: Record<string, string>): Mes
 }
 export class WorkflowRunner {
   constructor(private store: WorkspaceStore, private client: ModelClient, private emit: (id: string, event: WorkflowEvent) => void = () => {}) {}
-  private async status(id: string, status: string, error?: string) { await this.store.update(id, null, w => { w.status = status; const card = [...w.chat].reverse().find(c => c.role === 'workflow'); if (card) card.status = status; }); this.emit(id, { kind: 'run_status', status, error }); }
+  private async status(id: string, status: string, error?: string) { await this.store.update(id, null, w => { w.status = status; const card = [...w.chat].reverse().find(c => c.role === 'workflow'); if (card) { card.status = status; if (status !== 'running') card.stage_end = w.stages.length; } }); this.emit(id, { kind: 'run_status', status, error }); }
   private async chat(id: string, item: Json) { await this.store.update(id, null, w => { w.chat.push({ id: crypto.randomUUID(), time: Date.now() / 1000, ...item }); }); this.emit(id, { kind: 'chat_updated' }); }
   private async call(id: string, label: string, messages: Message[], signal: AbortSignal) {
     signal.throwIfAborted(); const prefix = label.includes('理解') || label.includes('规划') ? 'understand' : label.includes('修正') ? 'repair' : 'generate'; const stage = prefix + '-' + crypto.randomUUID(); let output = ''; const started = Date.now();
@@ -28,14 +28,14 @@ export class WorkflowRunner {
     }
   }
   async run(id: string, message: string, signal: AbortSignal, answer = false) {
-    await this.status(id, 'running');
     await this.chat(id, { role: 'user', type: 'user', text: message });
-    await this.chat(id, { role: 'workflow', status: 'running', workflow_type: (await this.store.get(id)).kind, title: '故事生成与校验' });
+    await this.chat(id, { role: 'workflow', status: 'running', workflow_type: (await this.store.get(id)).kind, title: '故事生成与校验', stage_start: (await this.store.get(id)).stages.length });
+    await this.status(id, 'running');
     try {
       let w = await this.store.get(id);
       if (Object.keys(w.saved).length) await this.edit(id, message, signal);
       else if (w.kind === 'main') await this.main(id, w.story || message, signal);
-      else await this.side(id, w.story || message, signal, answer ? message : '');
+      else await this.side(id, w.story || message, signal, answer ? message : w.answers || '');
     } catch (e) {
       await this.status(id, signal.aborted ? 'cancelled' : 'failed', e instanceof Error ? e.message : '运行失败');
       if (!signal.aborted) await this.chat(id, { role: 'assistant', type: 'assistant', text: e instanceof Error ? e.message : '运行失败' });

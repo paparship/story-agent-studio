@@ -10,11 +10,16 @@ export function validateProvider(p: Provider): Provider {
   return { base_url: url.href.replace(/\/$/, ''), api_key: p.api_key.trim(), model: p.model.trim() };
 }
 export class OpenAIClient implements ModelClient {
-  constructor(private endpoint: string, private headers: Record<string, string>, private model: string, private transport: typeof fetch = fetch) {}
+  constructor(private endpoint: string, private headers: Record<string, string>, private model: string, private transport: typeof fetch = (...args) => globalThis.fetch(...args)) {}
   static custom(provider: Provider) { const p = validateProvider(provider); return new OpenAIClient(p.base_url + '/chat/completions', { Authorization: 'Bearer ' + p.api_key }, p.model); }
   async complete(messages: Message[], delta: (text: string) => void, signal?: AbortSignal): Promise<Completion> {
     const requestSignal = signal ? AbortSignal.any([signal, AbortSignal.timeout(300000)]) : AbortSignal.timeout(300000);
-    const r = await this.transport(this.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', ...this.headers }, body: JSON.stringify({ model: this.model, messages, stream: true, max_tokens: 16000, ...(this.model.startsWith('deepseek') ? { thinking: { type: 'disabled' } } : {}) }), signal: requestSignal });
+    const request = () => this.transport(this.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', ...this.headers }, body: JSON.stringify({ model: this.model, messages, stream: true, max_tokens: 16000, ...(this.model.startsWith('deepseek') ? { thinking: { type: 'disabled' } } : {}) }), signal: requestSignal });
+    let r = await request();
+    for (let retry = 0; r.status === 409 && retry < 4; retry++) {
+      const error = await r.clone().json().catch(() => ({})); if (error.code !== 'OPERATION_BUSY') break;
+      await r.body?.cancel(); await new Promise(resolve => setTimeout(resolve, 250 * (retry + 1))); requestSignal.throwIfAborted(); r = await request();
+    }
     if (!r.ok) { if (r.status === 429) throw Error('模型服务请求较多，请稍后重试。'); throw Error(`模型服务请求失败（${r.status}）`); }
     if (!r.body) throw Error('模型服务未返回输出流');
     const reader = r.body.getReader(), decoder = new TextDecoder(); let buffer = '', text = '', finishReason = '', usage: unknown = null, done = false;

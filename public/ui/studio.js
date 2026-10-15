@@ -481,7 +481,7 @@ function buildWorkflowCard(item) {
   const card = document.createElement('div');
   card.className = 'wf-card';
 
-  const stages = run?.stages || [];
+  const stages = (run?.stages || []).slice(item.stage_start || 0, item.stage_end);
   const isMain = item.workflow_type === 'main';
   const stepDefs = isMain
     ? [
@@ -655,7 +655,7 @@ function buildClarificationCard(item) {
     const customInput = document.createElement('input');
     customInput.type = 'text';
     customInput.className = 'clarify-custom-input';
-    customInput.placeholder = '其他自定义调整说明（可选）…';
+    customInput.placeholder = q.options?.length ? '其他自定义调整说明（可选）…' : '填写回答…';
     customInput.value = curSel.custom_text || '';
     customInput.oninput = e => {
       clarifySelections[qId].custom_text = e.target.value;
@@ -692,11 +692,12 @@ async function submitClarification(questions, useRecommendedOnly) {
     const chosenOpt = useRecommendedOnly
       ? (q.options || [])[0]
       : (q.options || [])[sel.selected_index] || (q.options || [])[0] || '';
-    if (!chosenOpt && !sel.custom_text?.trim()) throw Error('请填写问题的回答');
+    if (!chosenOpt && !sel.custom_text?.trim()) { shortParts.push(''); return; }
     const custom = !useRecommendedOnly && sel.custom_text?.trim() ? `（补充：${sel.custom_text.trim()}）` : '';
     lines.push(`问题${idx + 1}（${q.question}）：选择「${chosenOpt}」${custom}`);
     shortParts.push(chosenOpt.replace(/（推荐）$/, '') + custom);
   });
+  if (shortParts.some(s => !s)) { fail(Error('请填写每个问题的回答')); return; }
   const answersText = lines.join('\n') || '全部采用系统推荐项';
   const summaryText = shortParts.join('；');
 

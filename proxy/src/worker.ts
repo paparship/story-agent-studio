@@ -73,9 +73,11 @@ export default {
       const upstream = await fetch('https://api.deepseek.com/chat/completions', { method: 'POST', headers: { Authorization: 'Bearer ' + env.DEEPSEEK_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: env.MODEL || 'deepseek-flash', messages: body.messages.map((m: any) => ({ role: m.role, content: m.content })), stream: true, stream_options: { include_usage: true }, max_tokens: 16000, thinking: { type: 'disabled' } }), signal: AbortSignal.timeout(300000) });
       if (!upstream.ok || !upstream.body) { await quota.release(op); return reply(502, 'UPSTREAM_UNAVAILABLE'); }
       const reader = upstream.body.getReader();
+      const decoder = new TextDecoder(); let tail = '', released = false;
+      const release = async () => { if (!released) { released = true; await quota.release(op); } };
       const stream = new ReadableStream<Uint8Array>({
-        async pull(controller) { try { const chunk = await reader.read(); if (chunk.done) { controller.close(); await quota.release(op); } else controller.enqueue(chunk.value); } catch { controller.error(Error('模型连接中断')); await quota.release(op); } },
-        async cancel() { await reader.cancel(); await quota.release(op); }
+        async pull(controller) { try { const chunk = await reader.read(); if (chunk.done) { await release(); controller.close(); } else { tail = (tail + decoder.decode(chunk.value, { stream: true })).slice(-256); if (tail.includes('data: [DONE]')) await release(); controller.enqueue(chunk.value); } } catch { await release(); controller.error(Error('模型连接中断')); } },
+        async cancel() { await reader.cancel(); await release(); }
       });
       return new Response(stream, { headers: { ...headers, 'Content-Type': 'text/event-stream; charset=utf-8' } });
     } catch { await quota.release(op); return reply(502, 'UPSTREAM_UNAVAILABLE'); }
