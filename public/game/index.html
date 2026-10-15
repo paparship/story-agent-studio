@@ -19,7 +19,7 @@ window.storyDebugReceive=json=>{
  const s=JSON.parse(json);current=s;
  if(game&&s.spatialState==='ready'&&s.configurationHash){
   const refreshKey=JSON.stringify([s.sceneEpoch,s.configurationHash,(s.spatialActors||[]).map(a=>[a.id,a.active])]);
-  if(refreshKey!==actorRefreshKey){actorRefreshKey=refreshKey;setTimeout(()=>dispatch('snapshot'),0);}
+  if(refreshKey!==actorRefreshKey){actorRefreshKey=refreshKey;setTimeout(()=>dispatch('snapshot'),500);}
  }
  el('status').textContent=`${s.scene} · 场景 ${s.sceneEpoch} · 帧 ${s.frame}`;
  el('error').textContent=s.error||'';

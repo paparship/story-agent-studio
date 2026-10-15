@@ -1029,7 +1029,9 @@ async function loadCompiledCandidate(ticket) {
     const [jsonText, storyText] = await Promise.all(paths.map(readText));
     if (ticket !== selection) return;
     packageData = JSON.parse(jsonText);
-    packageText = jsonText.replace(/\r\n/g, '\n');
+    const nextPackageText = jsonText.replace(/\r\n/g, '\n');
+    if (frame && packageText && nextPackageText !== packageText) $('gameStatus').textContent = '配置已有更新，请重新开始试玩以加载当前版本。';
+    packageText = nextPackageText;
     if (view === 'graph') {
       viewer?.destroy();
       viewer = new StoryGraphView($('graph'), { graphs: packageData.graphs }, packageData);
@@ -1770,7 +1772,10 @@ $('launch').onclick = async () => {
   expectedHash = Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join('');
   frame = document.createElement('iframe');
   frame.title = '剧情实机试玩';
-  frame.src = new URL(gameUrl, location.href).href + (gameUrl.includes('?') ? '&' : '?') + 'studio=1';
+  const playUrl = new URL(gameUrl, location.href);
+  playUrl.searchParams.set('studio', '1');
+  playUrl.searchParams.set('session', crypto.randomUUID());
+  frame.src = playUrl.href;
   $('gameHost').replaceChildren(frame);
   $('launch').textContent = '重新开始';
 };
