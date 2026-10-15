@@ -63,3 +63,21 @@ it('exhausted edit retries leave saved source and proposal unchanged', async () 
  await new WorkflowRunner(store, client(['{}','{}','{}','{}'])).run(id,'修改台词',new AbortController().signal);
  const w = await store.get(id); expect(w.status).toBe('failed'); expect(w.proposal).toBeNull(); expect(w.versions).toHaveLength(1); await store.close();
 });
+
+it('ordinary answers preserve version, source, proposal and previous validation status', async () => {
+ const {store,id}=await setup(); await store.publishInitial(id, {'story.dsl':examples[0].dsl}, '口信');
+ await store.update(id,null,w=>{w.status='failed';});
+ await new WorkflowRunner(store,client([JSON.stringify({reply:'完成对话后结束任务。',edits:[]})])).run(id,'什么时候完成？',new AbortController().signal);
+ const w=await store.get(id); expect(w.status).toBe('failed'); expect(w.versions).toHaveLength(1); expect(w.saved['story.dsl']).toBe(examples[0].dsl); expect(w.proposal).toBeNull();
+ expect(w.chat.find(c=>c.role==='workflow')!.operation).toBe('answer'); expect(w.stages.some(s=>s.id.startsWith('compile'))).toBe(false); await store.close();
+});
+it('edit progress carries actual changed file scope',async()=>{
+ const {store,id}=await setup();await store.publishInitial(id,{'story.dsl':examples[0].dsl},'口信');
+ await new WorkflowRunner(store,client([JSON.stringify({reply:'改标题',edits:[{path:'story.dsl',old:examples[0].dsl.split('\n')[0],new:'story "新标题"'}]})])).run(id,'改标题',new AbortController().signal);
+ const card=(await store.get(id)).chat.find(c=>c.role==='workflow')!;expect(card.operation).toBe('edit');expect(card.scope_files).toEqual(['story.dsl']);await store.close();
+});
+it('main generation has an explicit chapter workflow even before model response',async()=>{
+ const store=new WorkspaceStore(crypto.randomUUID()),w=await store.create('main','主线故事');
+ await new WorkflowRunner(store,client(['{}','{}','{}','{}'])).run(w.id,'主线故事',new AbortController().signal);
+ const card=(await store.get(w.id)).chat.find(c=>c.role==='workflow')!;expect(card.operation).toBe('generate_main');expect(card.title).toBe('主线章节生成');await store.close();
+});

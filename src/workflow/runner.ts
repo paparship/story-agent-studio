@@ -34,7 +34,9 @@ export class WorkflowRunner {
   }
   async run(id: string, message: string, signal: AbortSignal, answer = false) {
     await this.chat(id, { role: 'user', type: 'user', text: message });
-    await this.chat(id, { role: 'workflow', status: 'running', workflow_type: (await this.store.get(id)).kind, title: '故事生成与校验', stage_start: (await this.store.get(id)).stages.length });
+    const initial = await this.store.get(id);
+    const operation = Object.keys(initial.saved).length ? 'assistant' : initial.kind === 'main' ? 'generate_main' : 'generate_side';
+    await this.chat(id, { role: 'workflow', status: 'running', operation, previous_status: initial.status, workflow_type: initial.kind, title: operation === 'assistant' ? '正在阅读当前故事…' : initial.kind === 'main' ? '主线章节生成' : '支线故事生成', stage_start: initial.stages.length });
     await this.status(id, 'running');
     try {
       let w = await this.store.get(id);
@@ -122,7 +124,13 @@ export class WorkflowRunner {
       }
       return { result, files };
     }, signal);
-    if (!result.edits.length) { await this.chat(id, { type: 'assistant', role: 'assistant', text: result.reply }); await this.status(id, 'compiled'); return; }
+    if (!result.edits.length) {
+      let previousStatus = 'compiled';
+      await this.store.update(id, null, current => { const card = [...current.chat].reverse().find(c => c.role === 'workflow')!; card.operation = 'answer'; previousStatus = card.previous_status || 'compiled'; });
+      await this.chat(id, { type: 'assistant', role: 'assistant', text: result.reply }); await this.status(id, previousStatus); return;
+    }
+    await this.store.update(id, null, current => { const card = [...current.chat].reverse().find(c => c.role === 'workflow')!; card.operation = 'edit'; card.title = w.kind === 'main' ? '主线内容修改' : '支线内容修改'; card.scope_files = Object.keys(files).filter(path => files[path] !== w.saved[path]); });
+    this.emit(id, { kind: 'chat_updated' });
     for (const path of Object.keys(files)) if (files[path] !== w.saved[path]) files[path] = await this.compileWithRepair(id, files[path], path, { ...this.values(w.story, w.answers), confirmed_brief: JSON.stringify({ request: message, original: w.brief }) }, signal);
     signal.throwIfAborted(); await this.store.stage(id, base, files, result.reply); this.emit(id, { kind: 'proposal_ready' }); await this.chat(id, { type: 'assistant', role: 'assistant', text: result.reply, proposal_id: (await this.store.get(id)).proposal!.id }); await this.status(id, 'compiled');
   }

@@ -461,7 +461,8 @@ function renderChatStream() {
       el.textContent = item.text;
       box.append(el);
     } else if (item.role === 'workflow') {
-      box.append(buildWorkflowCard(item));
+      const workflowCard = buildWorkflowCard(item);
+      if (workflowCard) box.append(workflowCard);
     } else if (item.role === 'clarification') {
       box.append(buildClarificationCard(item));
     } else if (item.role === 'conflict') {
@@ -483,7 +484,22 @@ function buildWorkflowCard(item) {
 
   const stages = (run?.stages || []).slice(item.stage_start || 0, item.stage_end);
   const isMain = item.workflow_type === 'main';
-  const stepDefs = isMain
+  const legacyAssistant = !item.operation && stages.some(s => s.label?.startsWith('理解与调整故事'));
+  const operation = item.operation || (legacyAssistant ? (stages.some(s => s.id?.startsWith('compile')) ? 'edit' : item.status === 'running' ? 'assistant' : 'answer') : isMain ? 'generate_main' : 'generate_side');
+  if (operation === 'answer') return null;
+  if (operation === 'assistant') {
+    if (item.status !== 'running') return null;
+    card.className = 'assistant-reading';
+    card.setAttribute('role', 'status');
+    const spinner = document.createElement('span'); spinner.className = 'spinner';
+    card.append(spinner, document.createTextNode(' 正在阅读当前故事并处理你的消息…'));
+    return card;
+  }
+  const isEdit = operation === 'edit';
+  const stepDefs = isEdit ? [
+    { key: 'understand', label: '1. 分析修改' },
+    { key: 'compile', label: '2. 校验变更' },
+  ] : isMain
     ? [
         { key: 'understand', label: '1. 拆解章节' },
         { key: 'generate', label: '2. 生成章节' },
@@ -507,7 +523,7 @@ function buildWorkflowCard(item) {
   head.className = 'wf-head';
   const titleSpan = document.createElement('div');
   titleSpan.className = 'wf-title';
-  titleSpan.textContent = item.title || '剧情生成工作流';
+  titleSpan.textContent = isEdit ? (isMain ? '主线内容修改' : '支线内容修改') : isMain ? '主线章节生成' : '支线故事生成';
   head.append(titleSpan);
 
   if (wfRunning) {
@@ -519,14 +535,23 @@ function buildWorkflowCard(item) {
   } else {
     const badge = document.createElement('span');
     badge.className = 'badge';
-    badge.textContent = labels[item.status] || labels[run?.status] || '完成';
+    badge.textContent = isEdit && item.status === 'compiled' ? '提案已校验' : labels[item.status] || '完成';
     head.append(badge);
   }
   card.append(head);
+  if (isEdit && item.scope_files?.length) {
+    const scope = document.createElement('div'); scope.className = 'wf-foot-summary';
+    scope.textContent = '修改范围：' + item.scope_files.join('、'); card.append(scope);
+  }
+  if (isMain && !isEdit) {
+    const chapters = stages.filter(s => s.label?.startsWith('生成章节 ·'));
+    if (chapters.length) { const progress = document.createElement('div'); progress.className = 'wf-foot-summary'; progress.textContent = chapters.map(s => (s.status === 'completed' ? '✓ ' : s.status === 'running' ? '进行中：' : '') + s.label.replace('生成章节 · ', '')).join(' · '); card.append(progress); }
+  }
 
   // 3-Equal-Column Step Grid
   const grid = document.createElement('div');
   grid.className = 'wf-steps-grid';
+  grid.style.gridTemplateColumns = `repeat(${stepDefs.length}, minmax(0, 1fr))`;
 
   let activeStageObj = null;
   for (let i = 0; i < stepDefs.length; i++) {
@@ -535,7 +560,6 @@ function buildWorkflowCard(item) {
     const st = def.key === 'generate' && latestRepair ? latestRepair : findStage(def.key);
     const cell = document.createElement('button');
     let stStatus = st?.status || (wfRunning && stages.length === 0 && i === 0 ? 'running' : 'pending');
-    if (item.status === 'compiled' && def.key === 'compile') stStatus = 'completed';
     if (stStatus === 'compiled') stStatus = 'completed';
 
     cell.className = `wf-step-cell ${stStatus}` + (selectedWfStage === def.key ? ' active-view' : '');
