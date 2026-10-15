@@ -13,13 +13,15 @@ main{grid-template-columns:minmax(0,1fr) 320px}main>div,aside{min-width:0}#event
 <section><h2>原生拾取 · 背包</h2><select id="pickup" aria-label="场景拾取物"></select><button id="teleport-pickup" disabled>传送到拾取物附近</button><button id="collect" hidden disabled>调用原生拾取</button><p class="hint">只传送，不启动拾取；在游戏内按空格，再确认 Take it。</p><div id="bag"></div></section>
 <section><h2>验证记录</h2><button id="export">导出本次记录</button><details><summary>结构化状态</summary><pre id="raw"></pre></details></section></aside></main>
 <script>
-let game, current, lastEntities='', lastPickups='', records=[], lastKey='', actorRefreshKey='';
+let game, current, lastEntities='', lastPickups='', records=[], lastKey='', actorRefreshTimer=null;
 const el=id=>document.getElementById(id);
 window.storyDebugReceive=json=>{
  const s=JSON.parse(json);current=s;
  if(game&&s.spatialState==='ready'&&s.configurationHash){
-  const refreshKey=JSON.stringify([s.sceneEpoch,s.configurationHash,(s.spatialActors||[]).map(a=>[a.id,a.active])]);
-  if(refreshKey!==actorRefreshKey){actorRefreshKey=refreshKey;setTimeout(()=>dispatch('snapshot'),500);}
+  let bindings=[];try{bindings=JSON.parse(el('config-json').value).bindings||[];}catch{}
+  const missing=bindings.some(b=>b.interaction&&b.bindingKey?.startsWith('actor:')&&(s.spatialActors||[]).some(a=>a.id===b.bindingKey.slice(6)&&a.active)&&!s.entities.some(e=>e.name==='StoryActor_'+b.bindingKey.slice(6)));
+  if(missing&&!actorRefreshTimer){actorRefreshTimer=setTimeout(()=>{actorRefreshTimer=null;dispatch('snapshot');},1000);}
+  if(!missing&&actorRefreshTimer){clearTimeout(actorRefreshTimer);actorRefreshTimer=null;}
  }
  el('status').textContent=`${s.scene} · 场景 ${s.sceneEpoch} · 帧 ${s.frame}`;
  el('error').textContent=s.error||'';
