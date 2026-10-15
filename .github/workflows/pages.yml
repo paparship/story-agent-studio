@@ -38,6 +38,10 @@ jobs:
           gh release download demo-runtime-v1 --pattern game-runtime.zip --dir /tmp
           unzip -q /tmp/game-runtime.zip -d dist/game
       - uses: actions/configure-pages@v5
+      - name: Verify public proxy
+        run: node scripts/proxy-smoke.mjs
+        env:
+          VITE_PROXY_URL: ${{ vars.VITE_PROXY_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
