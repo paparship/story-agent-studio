@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Story Studio · 剧情试玩</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#151b1a;color:#e6eeeb;font:14px system-ui,sans-serif}header{height:58px;padding:16px 24px;border-bottom:1px solid #35423e;display:flex;justify-content:space-between}main{display:grid;grid-template-columns:minmax(600px,1fr) 390px;gap:18px;padding:18px}canvas{width:100%;aspect-ratio:1.6;background:#000;outline:none}.hint{color:#a7bab2;font-size:12px;margin:10px 0}aside{max-height:calc(100vh - 94px);overflow:auto}section{background:#202b27;border:1px solid #35433d;border-radius:8px;padding:14px;margin-bottom:12px}h2{font-size:14px;margin:0 0 10px}button,select{font:inherit;background:#31483f;color:#e8f5ee;border:1px solid #50695d;border-radius:5px;padding:7px 10px;margin:3px 0;max-width:100%}select{width:100%}button{cursor:pointer}button:disabled{opacity:.4;cursor:default}pre{font:12px/1.5 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0}#raw{max-height:250px;overflow:auto}.good{color:#9fd7b3}#status{color:#b7d1c4}#error{color:#ffb4a2}#quest,#trace{font-size:13px;line-height:1.6}small{color:#9fb3aa}.tag{color:#e4c895}
+main{grid-template-columns:minmax(0,1fr) 320px}main>div,aside{min-width:0}#events{max-height:220px;overflow:auto}#trace{overflow-wrap:anywhere}#bag{white-space:pre-wrap}aside{max-height:none}#dialogue{overflow-wrap:anywhere}@media(max-width:720px){main{grid-template-columns:1fr}}
+</style></head><body>
+<header><strong>Story Studio / 剧情试玩</strong><span id="status">正在加载 Unity…</span></header>
+<main><div><canvas id="unity-canvas" width="960" height="600" tabindex="0"></canvas><p class="hint">玩家入口验证：只用传送替代移动。到达目标附近后，在游戏画面按空格交互；对话与拾取使用正常游戏输入。</p><section><h2>当前画面文本</h2><div id="dialogue">等待运行状态</div></section><section><h2>运行事件</h2><pre id="events"></pre></section></div>
+<aside><section><h2>可读剧情配置</h2><pre id="config-status"></pre><details><summary>导入 JSON 配置包</summary><textarea id="config-json" aria-label="剧情配置 JSON" rows="10" style="width:100%;font:12px Consolas"></textarea><select id="config-example" aria-label="示例配置"><option value="workflow-message.json">Workflow · A 镇口捎话</option><option value="workflow-investigation.json">Workflow · B 货车调查（台词已修正）</option><option value="workflow-meeting.json">Workflow · C 镇口路况会合</option><option value="07-independent-investigation.json">DSL · 独立调查与口信</option><option value="01-town-meeting.json">DSL · 镇口多人会合</option><option value="02-ruins-handover.json">DSL · 遗迹交付与封存</option><option value="03-outpost-check.json">DSL · 哨站复核</option><option value="04-timeout-rehearsal.json">DSL · 并行超时分支</option><option value="05-full-chain.json">DSL · 完整采集交付链</option><option value="06-insufficient-transfer.json">DSL · 交付数量不足</option><option value="forest-bait-zh.json">林地诱饵回收 · 中文</option><option value="spatial-approach.json">卫兵走近女巫</option><option value="spatial-meeting.json">三人会合与区域取点</option><option value="spatial-no-point.json">无合法落点</option><option value="spatial-timeout.json">并行超时恢复</option><option value="forest-story.json">原始采集链 · 英文</option></select><button id="config-default">载入示例</button><button id="config-apply">校验并应用</button><p class="hint">空闲时应用。已接任务的规则和奖励修改需重新开始游戏。失败时保留当前配置。</p></details></section><section><h2>场景交互</h2><select id="entity" aria-label="场景交互对象"></select><button id="teleport" disabled>传送到 NPC 附近</button><label>距离 <input id="distance" type="number" min="0.7" max="4" step="0.1" value="1.5" style="width:64px"> 米</label><button id="run" hidden disabled>触发现有 Schematic</button> <button id="refresh" disabled>刷新状态</button><div id="error"></div><pre id="run-state"></pre><small>只在开发构建启用；实体 ID 随场景变化。</small></section>
+<section><h2>任务状态 · ORK 实时数据</h2><div id="quest"></div></section>
+<section><h2>节点执行路径</h2><div id="trace"></div></section>
+<section><h2>原生拾取 · 背包</h2><select id="pickup" aria-label="场景拾取物"></select><button id="teleport-pickup" disabled>传送到拾取物附近</button><button id="collect" hidden disabled>调用原生拾取</button><p class="hint">只传送，不启动拾取；在游戏内按空格，再确认 Take it。</p><div id="bag"></div></section>
+<section><h2>验证记录</h2><button id="export">导出本次记录</button><details><summary>结构化状态</summary><pre id="raw"></pre></details></section></aside></main>
+<script>
+let game, current, lastEntities='', lastPickups='', records=[], lastKey='';
+const el=id=>document.getElementById(id);
+window.storyDebugReceive=json=>{
+ const s=JSON.parse(json);current=s;
+ el('status').textContent=`${s.scene} · 场景 ${s.sceneEpoch} · 帧 ${s.frame}`;
+ el('error').textContent=s.error||'';
+ el('run-state').textContent=`${s.schematic||'尚未触发'}\n${s.commandStatus} / ${s.runState||'—'}`;
+ const active=s.entities.filter(e=>e.active);const key=JSON.stringify(active.map(e=>[e.id,e.name]));
+ if(key!==lastEntities){let old=el('entity').value;el('entity').replaceChildren(...active.map(e=>{let o=document.createElement('option');o.value=e.id;o.textContent=(s.spatialActors||[]).find(a=>e.name==='StoryActor_'+a.id)?.name||e.path;return o}));if(active.some(e=>e.id===old))el('entity').value=old;lastEntities=key;}
+ const busy=['started','collecting'].includes(s.commandStatus)||s.inBattle;
+ el('config-status').textContent=(s.configurationRevision||'未加载')+' / '+(s.configurationAction||'')+'\n'+(s.configurationError||'')+'\n'+(s.configurationHash||'').slice(0,16);
+ el('run').disabled=!game||!s.ready||!active.length||busy;el('refresh').disabled=!game;
+ const pickups=(s.pickups||[]).filter(p=>p.active&&!p.empty&&p.item);const pickupKey=JSON.stringify(pickups.map(p=>[p.id,p.quantity]));
+ if(pickupKey!==lastPickups){let old=el('pickup').value;el('pickup').replaceChildren(...pickups.map(p=>{let o=document.createElement('option');o.value=p.id;o.textContent=`${p.item} ×${p.quantity} · ${p.path}`;return o}));if(pickups.some(p=>p.id===old))el('pickup').value=old;lastPickups=pickupKey;}
+ el('collect').disabled=true; el('run').disabled=true; el('teleport').disabled=!game||!s.ready||!active.length||busy; el('teleport-pickup').disabled=!game||busy||!pickups.length;
+ el('bag').textContent=(s.inventory||[]).map(i=>`${i.name} ×${i.quantity}`).join('\n')||'背包中没有普通物品';
+ el('quest').textContent=s.quests.length?s.quests.map(q=>`${q.name} [${q.status}]\n`+q.tasks.map(t=>`  ${t.name}: ${t.status}`).join('\n')).join('\n\n'):'当前没有已接取的任务';el('quest').style.whiteSpace='pre-wrap';
+ el('trace').textContent=s.traceAvailable?(s.trace.map(t=>`${t.index} · ${t.name}`).join(' → ')||'等待节点记录'):'尚未取得节点记录';
+ el('dialogue').textContent=(s.visibleText||[]).join(' / ');
+ el('events').textContent=s.events.map(e=>`#${e.seq} [${e.frame}] ${e.type}: ${e.message}`).join('\n');
+ el('raw').textContent=JSON.stringify(s,null,2);
+ const recordKey=JSON.stringify([s.sceneEpoch,s.commandStatus,s.quests,s.trace,s.visibleText,s.events,s.inventory,s.pickups]);
+ if(recordKey!==lastKey){records.push({receivedAt:new Date().toISOString(),snapshot:s});if(records.length>300)records.shift();lastKey=recordKey;}
+};
+function dispatch(op){if(!game||!current)return;game.SendMessage('StoryDebugBridge','Dispatch',JSON.stringify({requestId:crypto.randomUUID(),op,distance:Number(el('distance').value),entityId:el((op==='collect'||op==='teleportPickup')?'pickup':'entity').value,sessionId:current.sessionId,sceneEpoch:current.sceneEpoch}));}
+el('run').onclick=()=>dispatch('run');el('refresh').onclick=()=>dispatch('snapshot');
+el('collect').onclick=()=>dispatch('collect'); el('teleport').onclick=()=>dispatch('teleport'); el('teleport-pickup').onclick=()=>dispatch('teleportPickup');
+el('export').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(records,null,2)],{type:'application/json'}));a.download='story-debug-session.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};
+el('config-default').onclick=async()=>{el('config-json').value=await (await fetch(el('config-example').value)).text();};
+el('config-apply').onclick=()=>{if(game)game.SendMessage('StoryConfigRuntime','ApplyPackage',el('config-json').value);};
+const config={dataUrl:'Build/webgl-demo.data',frameworkUrl:'Build/webgl-demo.framework.js',codeUrl:'Build/webgl-demo.wasm',streamingAssetsUrl:'StreamingAssets',companyName:'DefaultCompany',productName:'3D RPG Playground',productVersion:'0.1'};
+const loader=document.createElement('script');loader.src='Build/webgl-demo.loader.js';loader.onload=()=>createUnityInstance(el('unity-canvas'),config,p=>el('status').textContent=`加载 ${Math.round(p*100)}%`).then(g=>{game=g;el('status').textContent='等待调试桥连接…'}).catch(e=>el('error').textContent=String(e));document.body.appendChild(loader);
+</script><script>
+// Embedded in the WebGL page and its Unity template; no runtime rebuild required.
+// Only the local workspace parent can send a package. Game state acknowledges application.
+if(new URLSearchParams(location.search).get('studio')==='1'&&window.parent!==window){
+ document.documentElement.classList.add('studio-embedded');
+ const style=document.createElement('style');style.textContent='.studio-embedded header{display:none}.studio-embedded main{padding:10px;gap:12px;grid-template-columns:minmax(0,1fr) 245px}.studio-embedded aside>section:first-child,.studio-embedded main>div>section:last-child,.studio-embedded aside>section:nth-child(4){display:none}.studio-embedded main>div>.hint{display:none}.studio-embedded canvas{display:block;margin:auto;width:auto;height:calc(100vh - 65px);max-width:100%;aspect-ratio:1.6}.studio-embedded section{padding:10px}.studio-embedded h2{font-size:12px}@media(max-width:720px){.studio-embedded main{grid-template-columns:1fr}}';document.head.append(style);
+ const allowed=['http://127.0.0.1:8766','http://localhost:8766','http://127.0.0.1:8770','https://paparship.github.io'];
+ const parentOrigin=new URL(document.referrer||'http://invalid').origin;
+ if(allowed.includes(parentOrigin)){
+  let pending=null,sent=false,settled=false,lastStatus='';
+  const emit=data=>parent.postMessage(data,parentOrigin);
+  const status=text=>{if(text!==lastStatus){lastStatus=text;emit({type:'story-studio:status',text});}};
+  const receive=window.storyDebugReceive;
+  window.storyDebugReceive=json=>{
+   receive(json);
+   if(!pending||settled)return;
+   const s=current;
+   if(!s.ready||s.scene!=='World'){status('游戏已加载，请选择 New Game 进入世界。');return;}
+   if(!sent){if(s.inBattle||s.runState==='Running')return;sent=true;status('正在校验并加载当前故事…');el('config-json').value=pending.text;game.SendMessage('StoryConfigRuntime','ApplyPackage',pending.text);return;}
+   if(s.configurationHash===pending.hash&&s.configurationAction==='applied'){settled=true;dispatch('snapshot');emit({type:'story-studio:applied',hash:s.configurationHash,revision:s.configurationRevision});}
+   else if(s.configurationAction==='rejected'){settled=true;status('配置加载失败：'+s.configurationError);}
+  };
+  window.addEventListener('message',e=>{if(e.source!==parent||e.origin!==parentOrigin||e.data?.type!=='story-studio:load'||pending)return;const d=e.data;if(typeof d.text!=='string'||d.text.length>2000000||! /^[a-f0-9]{64}$/.test(d.hash))return;try{JSON.parse(d.text);}catch{status('配置文件无法解析。');return;}pending={text:d.text,hash:d.hash};status('等待游戏加载，随后选择 New Game…');});
+  emit({type:'story-studio:ready'});
+ }
+}
+
+</script></body></html>
+
+

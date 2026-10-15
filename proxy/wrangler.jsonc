@@ -1,0 +1,16 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "story-agent-proxy",
+  "account_id": "7f0024193a1ae8d03b69cddf1687469a",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "vars": {
+    "ALLOWED_ORIGINS": "http://127.0.0.1:8770,https://paparship.github.io",
+    "MODEL": "deepseek-flash",
+    "DAILY_MODEL_CALLS": "200"
+  },
+  "durable_objects": { "bindings": [{ "name": "QUOTAS", "class_name": "QuotaStore" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["QuotaStore"] }],
+  "observability": { "enabled": false }
+}

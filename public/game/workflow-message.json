@@ -1,0 +1,374 @@
+{
+  "schemaVersion": "0.4.0",
+  "packageId": "story_93245443035f",
+  "revision": "dsl-652b915b5b51",
+  "stage": "dsl",
+  "capabilityProfile": "playground-quests-v3",
+  "quests": [
+    {
+      "id": "deliver_message",
+      "nameKey": "deliver_message.title",
+      "repeatable": false,
+      "tasks": [
+        {
+          "id": "t_3c152f700dcf",
+          "nameKey": "t_3c152f700dcf.title",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "always": true
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": true
+        }
+      ],
+      "rewards": {
+        "items": [],
+        "experienceProfileRef": "none"
+      }
+    }
+  ],
+  "graphs": [
+    {
+      "id": "worker_talk",
+      "entry": "worker_check",
+      "settings": {
+        "blockPlayer": true,
+        "blockCamera": false
+      },
+      "nodes": [
+        {
+          "id": "worker_check",
+          "type": "condition",
+          "params": {
+            "when": {
+              "questStatus": {
+                "quest": "deliver_message",
+                "is": "notAdded"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_15",
+            "no": "n_21"
+          }
+        },
+        {
+          "id": "n_15",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_bff01f9cc7b6",
+            "textKey": "worker_talk.n_15",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_16"
+          }
+        },
+        {
+          "id": "n_16",
+          "type": "quest.add",
+          "params": {
+            "quest": "deliver_message"
+          },
+          "outputs": {
+            "next": "n_20",
+            "rejected": "n_18"
+          }
+        },
+        {
+          "id": "n_18",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_bff01f9cc7b6",
+            "textKey": "worker_talk.n_18",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_19"
+          }
+        },
+        {
+          "id": "n_19",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_20",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_21",
+          "type": "condition",
+          "params": {
+            "when": {
+              "questStatus": {
+                "quest": "deliver_message",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_22",
+            "no": "n_25"
+          }
+        },
+        {
+          "id": "n_22",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_bff01f9cc7b6",
+            "textKey": "worker_talk.n_22",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_23"
+          }
+        },
+        {
+          "id": "n_23",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_25",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_bff01f9cc7b6",
+            "textKey": "worker_talk.n_25",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_26"
+          }
+        },
+        {
+          "id": "n_26",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        }
+      ]
+    },
+    {
+      "id": "carter_talk",
+      "entry": "carter_check",
+      "settings": {
+        "blockPlayer": true,
+        "blockCamera": false
+      },
+      "nodes": [
+        {
+          "id": "carter_check",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "deliver_message",
+                "task": "t_3c152f700dcf",
+                "is": "finished"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_31",
+            "no": "n_33"
+          }
+        },
+        {
+          "id": "n_31",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_74fd45556b8c",
+            "textKey": "carter_talk.n_31",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_32"
+          }
+        },
+        {
+          "id": "n_32",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_33",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "deliver_message",
+                "task": "t_3c152f700dcf",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_34",
+            "no": "n_39"
+          }
+        },
+        {
+          "id": "n_34",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_74fd45556b8c",
+            "textKey": "carter_talk.n_34",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_35"
+          }
+        },
+        {
+          "id": "n_35",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_74fd45556b8c",
+            "textKey": "carter_talk.n_35",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_36"
+          }
+        },
+        {
+          "id": "n_36",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "deliver_message",
+            "task": "t_3c152f700dcf",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "n_37"
+          }
+        },
+        {
+          "id": "n_37",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_39",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_74fd45556b8c",
+            "textKey": "carter_talk.n_39",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_40"
+          }
+        },
+        {
+          "id": "n_40",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        }
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "id": "bind_worker_talk",
+      "bindingKey": "actor:a_bff01f9cc7b6",
+      "enabledWhen": {
+        "always": true
+      },
+      "interaction": {
+        "graph": "worker_talk",
+        "trigger": "interact",
+        "profileRef": "playground_interact",
+        "reentry": "ignoreWhileRunning"
+      }
+    },
+    {
+      "id": "bind_carter_talk",
+      "bindingKey": "actor:a_74fd45556b8c",
+      "enabledWhen": {
+        "always": true
+      },
+      "interaction": {
+        "graph": "carter_talk",
+        "trigger": "interact",
+        "profileRef": "playground_interact",
+        "reentry": "ignoreWhileRunning"
+      }
+    }
+  ],
+  "texts": {
+    "deliver_message.title": "捎话给车夫",
+    "t_3c152f700dcf.title": "给车夫捎口信",
+    "worker_talk.n_25": "多谢你帮我带话。",
+    "worker_talk.n_22": "口信就拜托你了，车夫在镇口另一边。",
+    "worker_talk.n_18": "你已经知道这件事了，快去吧。",
+    "worker_talk.n_15": "我准备出发了。麻烦你替我给车夫捎句话：家里一切平安，让他安心送货。",
+    "carter_talk.n_39": "你好，路上小心。",
+    "carter_talk.n_35": "那我就放心了，谢谢你跑这一趟。",
+    "carter_talk.n_34": "你从镇口工人那儿来？他有什么话要带给我？",
+    "carter_talk.n_31": "又见面了，多谢你带话。"
+  },
+  "spatial": {
+    "actors": [
+      {
+        "id": "a_d8f5088468cc",
+        "name": "镇口",
+        "bindingKey": "world.witch_town"
+      },
+      {
+        "id": "a_bff01f9cc7b6",
+        "name": "工人",
+        "prefabRef": "worker",
+        "spawn": {
+          "anchor": "a_d8f5088468cc",
+          "offset": [
+            -3,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "a_74fd45556b8c",
+        "name": "车夫",
+        "prefabRef": "worker",
+        "spawn": {
+          "anchor": "a_d8f5088468cc",
+          "offset": [
+            3,
+            0,
+            0
+          ]
+        }
+      }
+    ],
+    "regions": [],
+    "points": []
+  }
+}

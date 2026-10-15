@@ -1,0 +1,679 @@
+{
+  "schemaVersion": "0.3.0",
+  "packageId": "forest_story",
+  "revision": "spatial-timeout-v1",
+  "stage": "polish",
+  "capabilityProfile": "playground-spatial-v2",
+  "quests": [
+    {
+      "id": "forest_cheese",
+      "nameKey": "quest.name",
+      "repeatable": false,
+      "tasks": [
+        {
+          "id": "meet",
+          "nameKey": "task.meet",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "always": true
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": false
+        },
+        {
+          "id": "collect",
+          "nameKey": "task.collect",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "taskStatus": {
+                "quest": "forest_cheese",
+                "task": "meet",
+                "is": "finished"
+              }
+            }
+          },
+          "complete": {
+            "mode": "auto"
+          },
+          "finishQuest": false,
+          "progress": {
+            "kind": "collected",
+            "targetRef": "ruined_cheese",
+            "required": 3,
+            "countFrom": "taskActivation"
+          }
+        },
+        {
+          "id": "deliver",
+          "nameKey": "task.deliver",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "taskStatus": {
+                "quest": "forest_cheese",
+                "task": "collect",
+                "is": "finished"
+              }
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": false
+        },
+        {
+          "id": "outpost",
+          "nameKey": "task.outpost",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "taskStatus": {
+                "quest": "forest_cheese",
+                "task": "deliver",
+                "is": "finished"
+              }
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": true
+        }
+      ],
+      "rewards": {
+        "items": [
+          {
+            "item": "high_potion",
+            "quantity": 2
+          },
+          {
+            "item": "revive_potion",
+            "quantity": 1
+          },
+          {
+            "item": "magic_crystal",
+            "quantity": 1
+          }
+        ],
+        "experienceProfileRef": "level_based_20"
+      }
+    }
+  ],
+  "graphs": [
+    {
+      "id": "bait_recovery_collection",
+      "entry": "meeting",
+      "settings": {
+        "blockPlayer": true,
+        "blockCamera": false
+      },
+      "nodes": [
+        {
+          "id": "meeting",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "forest_cheese",
+                "task": "meet",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "greet",
+            "no": "collecting"
+          }
+        },
+        {
+          "id": "greet",
+          "type": "dialogue",
+          "params": {
+            "speaker": "witch",
+            "textKey": "meet",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "meet_done"
+          }
+        },
+        {
+          "id": "meet_done",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "forest_cheese",
+            "task": "meet",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "end"
+          }
+        },
+        {
+          "id": "collecting",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "forest_cheese",
+                "task": "collect",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "reminder",
+            "no": "delivering"
+          }
+        },
+        {
+          "id": "reminder",
+          "type": "dialogue",
+          "params": {
+            "speaker": "witch",
+            "textKey": "missing",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "end"
+          }
+        },
+        {
+          "id": "delivering",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "forest_cheese",
+                "task": "deliver",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "bag_check",
+            "no": "end"
+          }
+        },
+        {
+          "id": "bag_check",
+          "type": "condition",
+          "params": {
+            "when": {
+              "inventory": {
+                "owner": "player",
+                "item": "ruined_cheese",
+                "gte": 3
+              }
+            }
+          },
+          "outputs": {
+            "yes": "thanks",
+            "no": "missing_items"
+          }
+        },
+        {
+          "id": "thanks",
+          "type": "dialogue",
+          "params": {
+            "speaker": "witch",
+            "textKey": "deliver",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "fade_out"
+          }
+        },
+        {
+          "id": "fade_out",
+          "type": "screen.fade",
+          "params": {
+            "to": 1,
+            "duration": 0.5,
+            "wait": true
+          },
+          "outputs": {
+            "next": "remove"
+          }
+        },
+        {
+          "id": "remove",
+          "type": "inventory.remove",
+          "params": {
+            "owner": "player",
+            "item": "ruined_cheese",
+            "quantity": 3
+          },
+          "outputs": {
+            "next": "deliver_done",
+            "insufficient": "fade_back_error"
+          }
+        },
+        {
+          "id": "deliver_done",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "forest_cheese",
+            "task": "deliver",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "fade_in"
+          }
+        },
+        {
+          "id": "fade_in",
+          "type": "screen.fade",
+          "params": {
+            "to": 0,
+            "duration": 0.5,
+            "wait": true
+          },
+          "outputs": {
+            "next": "sealed_notice"
+          }
+        },
+        {
+          "id": "fade_back_error",
+          "type": "screen.fade",
+          "params": {
+            "to": 0,
+            "duration": 0.5,
+            "wait": true
+          },
+          "outputs": {
+            "next": "missing_items"
+          }
+        },
+        {
+          "id": "missing_items",
+          "type": "dialogue",
+          "params": {
+            "speaker": "witch",
+            "textKey": "insufficient",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "end"
+          }
+        },
+        {
+          "id": "sealed_notice",
+          "type": "dialogue",
+          "params": {
+            "speaker": "witch",
+            "textKey": "sealed",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "end"
+          }
+        },
+        {
+          "id": "end",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        }
+      ]
+    },
+    {
+      "id": "bait_recovery_reward",
+      "entry": "ready",
+      "settings": {
+        "blockPlayer": true,
+        "blockCamera": false
+      },
+      "nodes": [
+        {
+          "id": "ready",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "forest_cheese",
+                "task": "outpost",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "reward",
+            "no": "end"
+          }
+        },
+        {
+          "id": "reward",
+          "type": "dialogue",
+          "params": {
+            "speaker": "witch",
+            "textKey": "outpost",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "complete"
+          }
+        },
+        {
+          "id": "complete",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "forest_cheese",
+            "task": "outpost",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "end"
+          }
+        },
+        {
+          "id": "end",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        }
+      ]
+    },
+    {
+      "id": "spatial_demo",
+      "entry": "timeout_intro",
+      "settings": {
+        "blockPlayer": true,
+        "blockCamera": false
+      },
+      "nodes": [
+        {
+          "id": "timeout_intro",
+          "type": "dialogue",
+          "params": {
+            "speaker": "witch",
+            "textKey": "timeout_intro",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "short_join"
+          }
+        },
+        {
+          "id": "short_join",
+          "type": "parallel",
+          "params": {
+            "timeout": 0.1,
+            "actions": [
+              {
+                "id": "guard",
+                "type": "actor.move",
+                "params": {
+                  "actor": "guard",
+                  "target": {
+                    "kind": "point",
+                    "point": "guard_near"
+                  },
+                  "speed": 0.1,
+                  "stop": 0.1,
+                  "timeout": 10
+                }
+              },
+              {
+                "id": "worker",
+                "type": "actor.move",
+                "params": {
+                  "actor": "worker",
+                  "target": {
+                    "kind": "point",
+                    "point": "worker_area"
+                  },
+                  "speed": 0.1,
+                  "stop": 0.1,
+                  "timeout": 10
+                }
+              }
+            ]
+          },
+          "outputs": {
+            "next": "unexpected",
+            "failed": "failure"
+          }
+        },
+        {
+          "id": "unexpected",
+          "type": "dialogue",
+          "params": {
+            "speaker": "guard",
+            "textKey": "unexpected",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "end"
+          }
+        },
+        {
+          "id": "failure",
+          "type": "dialogue",
+          "params": {
+            "speaker": "witch",
+            "textKey": "failure",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "end"
+          }
+        },
+        {
+          "id": "end",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        }
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "id": "witch_town",
+      "bindingKey": "world.witch_town",
+      "enabledWhen": {
+        "always": true
+      },
+      "interaction": {
+        "graph": "spatial_demo",
+        "trigger": "interact",
+        "profileRef": "playground_interact",
+        "reentry": "ignoreWhileRunning"
+      }
+    },
+    {
+      "id": "witch_forest",
+      "bindingKey": "world.witch_forest",
+      "enabledWhen": {
+        "any": [
+          {
+            "taskStatus": {
+              "quest": "forest_cheese",
+              "task": "meet",
+              "is": "active"
+            }
+          },
+          {
+            "taskStatus": {
+              "quest": "forest_cheese",
+              "task": "collect",
+              "is": "active"
+            }
+          },
+          {
+            "taskStatus": {
+              "quest": "forest_cheese",
+              "task": "deliver",
+              "is": "active"
+            }
+          }
+        ]
+      },
+      "interaction": {
+        "graph": "bait_recovery_collection",
+        "trigger": "interact",
+        "profileRef": "playground_interact",
+        "reentry": "ignoreWhileRunning"
+      }
+    },
+    {
+      "id": "witch_outpost",
+      "bindingKey": "world.witch_outpost",
+      "enabledWhen": {
+        "taskStatus": {
+          "quest": "forest_cheese",
+          "task": "outpost",
+          "is": "active"
+        }
+      },
+      "interaction": {
+        "graph": "bait_recovery_reward",
+        "trigger": "interact",
+        "profileRef": "playground_interact",
+        "reentry": "ignoreWhileRunning"
+      }
+    },
+    {
+      "id": "cheese_1",
+      "bindingKey": "world.cheese_1",
+      "enabledWhen": {
+        "taskStatus": {
+          "quest": "forest_cheese",
+          "task": "collect",
+          "is": "active"
+        }
+      },
+      "collectorProfileRef": "ruined_cheese_single"
+    },
+    {
+      "id": "cheese_2",
+      "bindingKey": "world.cheese_2",
+      "enabledWhen": {
+        "taskStatus": {
+          "quest": "forest_cheese",
+          "task": "collect",
+          "is": "active"
+        }
+      },
+      "collectorProfileRef": "ruined_cheese_single"
+    },
+    {
+      "id": "cheese_3",
+      "bindingKey": "world.cheese_3",
+      "enabledWhen": {
+        "taskStatus": {
+          "quest": "forest_cheese",
+          "task": "collect",
+          "is": "active"
+        }
+      },
+      "collectorProfileRef": "ruined_cheese_single"
+    }
+  ],
+  "texts": {
+    "quest.name": "林地诱饵回收",
+    "task.meet": "前往遗迹，与女巫核对回收计划",
+    "task.collect": "回收三处废弃诱饵",
+    "task.deliver": "将三份诱饵交给女巫封存",
+    "task.outpost": "前往哨站领取报酬",
+    "town": "镇外的蜂群最近越来越多。有人把旧奶酪当作诱饵，留在了森林遗迹。\n我是负责调查的艾琳。请到遗迹来找我，我们得先把那些诱饵收回来。",
+    "meet": "你来了。遗迹附近还剩三处诱饵。\n请把三份都带回来，不要食用，也别随手丢进河里。我会在这里等你，确认数量后统一封存。",
+    "missing": "还没有收齐吗？遗迹附近共有三处。\n已经拿到的请留在背包里，我们要一次收齐，才能确认没有遗漏。",
+    "deliver": "三份都在，数量对上了。\n把它们交给我吧。我会封好带走，免得继续引来蜂群。",
+    "sealed": "封存好了，谢谢你。\n报酬放在南边的哨站。我先过去登记，你随后来找我领取。",
+    "outpost": "回收记录已经交给守卫，遗迹附近会重新巡查。\n这是你的报酬：高级药水两份、复活药水一份、魔法水晶一枚。\n以后见到不明诱饵，先报告，别急着尝一口。",
+    "insufficient": "登记上已经收齐三份，但你现在带来的数量不够。\n请把遗落的诱饵取回来。没有实物，我不能完成封存。",
+    "already": "这批诱饵已经封存了，请到哨站找我。",
+    "failure": "这次没能找到合适的路线，先停下。大家都可以自由活动了。",
+    "invite": "罗恩，请走近一点。我想核对遗迹回收的记录。",
+    "reply": "我到了。三份诱饵都已经封存，接下来安排巡查。",
+    "meeting_intro": "罗恩到我旁边来，维克在镇口会合区找个空位。等你们站稳，我们再开始。",
+    "report": "人都到齐了。维克，你在货棚发现了什么？",
+    "worker_report": "包装上的封条来自旧货棚。我会检查剩下的箱子，你们负责周围巡逻。",
+    "conclude": "好，回收记录由我保管。我们按这个分工处理。",
+    "bad_intro": "这次测试目标在地面上方，那里没有可站立的位置。请检查后停止，不要强行传送。",
+    "unexpected": "异常：不应该在极短时间完成。",
+    "timeout_intro": "这次给两人的会合只留极短时间，确认超时后会停止双方移动。"
+  },
+  "spatial": {
+    "actors": [
+      {
+        "id": "witch",
+        "name": "艾琳",
+        "bindingKey": "world.witch_town"
+      },
+      {
+        "id": "guard",
+        "name": "守卫罗恩",
+        "prefabRef": "knight",
+        "spawn": {
+          "anchor": "witch",
+          "offset": [
+            4,
+            0,
+            3
+          ]
+        }
+      },
+      {
+        "id": "worker",
+        "name": "工匠维克",
+        "prefabRef": "worker",
+        "spawn": {
+          "anchor": "witch",
+          "offset": [
+            -4,
+            0,
+            3
+          ]
+        }
+      }
+    ],
+    "regions": [
+      {
+        "id": "town_square",
+        "name": "镇口会合区",
+        "anchor": "witch",
+        "radius": 7
+      }
+    ],
+    "points": [
+      {
+        "id": "guard_near",
+        "kind": "near",
+        "actor": "witch",
+        "minDistance": 1.6,
+        "maxDistance": 2.3,
+        "seed": 27
+      },
+      {
+        "id": "worker_area",
+        "kind": "area",
+        "region": "town_square",
+        "seed": 18
+      },
+      {
+        "id": "unreachable",
+        "kind": "offset",
+        "anchor": "witch",
+        "offset": [
+          0,
+          45,
+          0
+        ]
+      }
+    ]
+  }
+}

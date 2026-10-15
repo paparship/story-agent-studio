@@ -1,0 +1,664 @@
+{
+  "schemaVersion": "0.4.0",
+  "packageId": "story_7ed835f57fe1",
+  "revision": "dsl-a4b8d404471b",
+  "stage": "dsl",
+  "capabilityProfile": "playground-quests-v3",
+  "quests": [
+    {
+      "id": "missing_cart",
+      "nameKey": "missing_cart.title",
+      "repeatable": false,
+      "tasks": [
+        {
+          "id": "t_b389ef533c31",
+          "nameKey": "t_b389ef533c31.title",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "always": true
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": false
+        },
+        {
+          "id": "t_0341de9145b9",
+          "nameKey": "t_0341de9145b9.title",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "always": true
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": false
+        },
+        {
+          "id": "t_1737e1d847d8",
+          "nameKey": "t_1737e1d847d8.title",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "all": [
+                {
+                  "taskStatus": {
+                    "quest": "missing_cart",
+                    "task": "t_b389ef533c31",
+                    "is": "finished"
+                  }
+                },
+                {
+                  "taskStatus": {
+                    "quest": "missing_cart",
+                    "task": "t_0341de9145b9",
+                    "is": "finished"
+                  }
+                }
+              ]
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": true
+        }
+      ],
+      "rewards": {
+        "items": [
+          {
+            "item": "high_potion",
+            "quantity": 1
+          }
+        ],
+        "experienceProfileRef": "none"
+      }
+    },
+    {
+      "id": "message",
+      "nameKey": "message.title",
+      "repeatable": false,
+      "tasks": [
+        {
+          "id": "t_1abab1e4e809",
+          "nameKey": "t_1abab1e4e809.title",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "always": true
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": true
+        }
+      ],
+      "rewards": {
+        "items": [],
+        "experienceProfileRef": "none"
+      }
+    }
+  ],
+  "graphs": [
+    {
+      "id": "commission",
+      "entry": "n_21",
+      "settings": {
+        "blockPlayer": true,
+        "blockCamera": false
+      },
+      "nodes": [
+        {
+          "id": "n_21",
+          "type": "condition",
+          "params": {
+            "when": {
+              "questStatus": {
+                "quest": "missing_cart",
+                "is": "notAdded"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_22",
+            "no": "n_32"
+          }
+        },
+        {
+          "id": "n_22",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_35b81cdb9a6b",
+            "textKey": "commission.n_22",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_23"
+          }
+        },
+        {
+          "id": "n_23",
+          "type": "quest.add",
+          "params": {
+            "quest": "missing_cart"
+          },
+          "outputs": {
+            "next": "n_27",
+            "rejected": "n_25"
+          }
+        },
+        {
+          "id": "n_25",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_35b81cdb9a6b",
+            "textKey": "commission.n_25",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_26"
+          }
+        },
+        {
+          "id": "n_26",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_27",
+          "type": "quest.add",
+          "params": {
+            "quest": "message"
+          },
+          "outputs": {
+            "next": "n_31",
+            "rejected": "n_29"
+          }
+        },
+        {
+          "id": "n_29",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_35b81cdb9a6b",
+            "textKey": "commission.n_29",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_30"
+          }
+        },
+        {
+          "id": "n_30",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_31",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_35b81cdb9a6b",
+            "textKey": "commission.n_31",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_39"
+          }
+        },
+        {
+          "id": "n_32",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "missing_cart",
+                "task": "t_1737e1d847d8",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_33",
+            "no": "n_35"
+          }
+        },
+        {
+          "id": "n_33",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_35b81cdb9a6b",
+            "textKey": "commission.n_33",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_34"
+          }
+        },
+        {
+          "id": "n_34",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "missing_cart",
+            "task": "t_1737e1d847d8",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "n_39"
+          }
+        },
+        {
+          "id": "n_35",
+          "type": "condition",
+          "params": {
+            "when": {
+              "questStatus": {
+                "quest": "missing_cart",
+                "is": "finished"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_36",
+            "no": "n_38"
+          }
+        },
+        {
+          "id": "n_36",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_35b81cdb9a6b",
+            "textKey": "commission.n_36",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_39"
+          }
+        },
+        {
+          "id": "n_38",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_35b81cdb9a6b",
+            "textKey": "commission.n_38",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_39"
+          }
+        },
+        {
+          "id": "n_39",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        }
+      ]
+    },
+    {
+      "id": "guard_witness",
+      "entry": "n_42",
+      "settings": {
+        "blockPlayer": true,
+        "blockCamera": false
+      },
+      "nodes": [
+        {
+          "id": "n_42",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "missing_cart",
+                "task": "t_b389ef533c31",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_43",
+            "no": "n_45"
+          }
+        },
+        {
+          "id": "n_43",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_4059fb16b1c5",
+            "textKey": "guard_witness.n_43",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_44"
+          }
+        },
+        {
+          "id": "n_44",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "missing_cart",
+            "task": "t_b389ef533c31",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "n_49"
+          }
+        },
+        {
+          "id": "n_45",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "missing_cart",
+                "task": "t_b389ef533c31",
+                "is": "finished"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_46",
+            "no": "n_48"
+          }
+        },
+        {
+          "id": "n_46",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_4059fb16b1c5",
+            "textKey": "guard_witness.n_46",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_49"
+          }
+        },
+        {
+          "id": "n_48",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_4059fb16b1c5",
+            "textKey": "guard_witness.n_48",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_49"
+          }
+        },
+        {
+          "id": "n_49",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        }
+      ]
+    },
+    {
+      "id": "driver_witness",
+      "entry": "n_52",
+      "settings": {
+        "blockPlayer": true,
+        "blockCamera": false
+      },
+      "nodes": [
+        {
+          "id": "n_52",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "missing_cart",
+                "task": "t_0341de9145b9",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_53",
+            "no": "n_55"
+          }
+        },
+        {
+          "id": "n_53",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_74fd45556b8c",
+            "textKey": "driver_witness.n_53",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_54"
+          }
+        },
+        {
+          "id": "n_54",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "missing_cart",
+            "task": "t_0341de9145b9",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "n_59"
+          }
+        },
+        {
+          "id": "n_55",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "missing_cart",
+                "task": "t_0341de9145b9",
+                "is": "finished"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_56",
+            "no": "n_58"
+          }
+        },
+        {
+          "id": "n_56",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_74fd45556b8c",
+            "textKey": "driver_witness.n_56",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_59"
+          }
+        },
+        {
+          "id": "n_58",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_74fd45556b8c",
+            "textKey": "driver_witness.n_58",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_59"
+          }
+        },
+        {
+          "id": "n_59",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "message",
+                "task": "t_1abab1e4e809",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_60",
+            "no": "n_62"
+          }
+        },
+        {
+          "id": "n_60",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_74fd45556b8c",
+            "textKey": "driver_witness.n_60",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_61"
+          }
+        },
+        {
+          "id": "n_61",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "message",
+            "task": "t_1abab1e4e809",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "n_62"
+          }
+        },
+        {
+          "id": "n_62",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        }
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "id": "bind_commission",
+      "bindingKey": "actor:a_35b81cdb9a6b",
+      "enabledWhen": {
+        "always": true
+      },
+      "interaction": {
+        "graph": "commission",
+        "trigger": "interact",
+        "profileRef": "playground_interact",
+        "reentry": "ignoreWhileRunning"
+      }
+    },
+    {
+      "id": "bind_guard_witness",
+      "bindingKey": "actor:a_4059fb16b1c5",
+      "enabledWhen": {
+        "always": true
+      },
+      "interaction": {
+        "graph": "guard_witness",
+        "trigger": "interact",
+        "profileRef": "playground_interact",
+        "reentry": "ignoreWhileRunning"
+      }
+    },
+    {
+      "id": "bind_driver_witness",
+      "bindingKey": "actor:a_74fd45556b8c",
+      "enabledWhen": {
+        "always": true
+      },
+      "interaction": {
+        "graph": "driver_witness",
+        "trigger": "interact",
+        "profileRef": "playground_interact",
+        "reentry": "ignoreWhileRunning"
+      }
+    }
+  ],
+  "texts": {
+    "missing_cart.title": "失踪的货车",
+    "t_b389ef533c31.title": "询问镇口守卫",
+    "t_0341de9145b9.title": "询问货运车夫",
+    "t_1737e1d847d8.title": "向委托人回报线索",
+    "message.title": "捎一句平安",
+    "t_1abab1e4e809.title": "向车夫转达口信",
+    "commission.n_38": "还差一点线索，请把守卫和车夫都问一遍。",
+    "commission.n_36": "货车的事已经查清，感谢你的帮助。",
+    "commission.n_33": "原来是桥坏了，货车改走北路。线索对上了，多谢！这瓶药水给你。",
+    "commission.n_31": "再替我告诉车夫：家里一切平安。不论先找谁都可以。",
+    "commission.n_29": "顺便的口信已经记下了。",
+    "commission.n_25": "委托暂时无法领取。",
+    "commission.n_22": "运货的车到现在还没回来。请问问守卫和车夫，看看发生了什么。",
+    "guard_witness.n_48": "今天镇口还算平静。",
+    "guard_witness.n_46": "我知道的都已经告诉你了，去问问车夫吧。",
+    "guard_witness.n_43": "我看到货车往北去了。南边的桥昨天被冲坏，今天封路。",
+    "driver_witness.n_60": "家里平安就好，谢谢你特意带来口信。",
+    "driver_witness.n_58": "你在找什么人吗？",
+    "driver_witness.n_56": "放心，他们应该很快就到了。",
+    "driver_witness.n_53": "没错，货车改走北路了，只是绕远，没有遇到强盗。"
+  },
+  "spatial": {
+    "actors": [
+      {
+        "id": "a_1f56beee4fd1",
+        "name": "镇口锚点",
+        "bindingKey": "world.witch_town"
+      },
+      {
+        "id": "a_35b81cdb9a6b",
+        "name": "委托人",
+        "prefabRef": "worker",
+        "spawn": {
+          "anchor": "a_1f56beee4fd1",
+          "offset": [
+            4,
+            0,
+            3
+          ]
+        }
+      },
+      {
+        "id": "a_4059fb16b1c5",
+        "name": "守卫",
+        "prefabRef": "knight",
+        "spawn": {
+          "anchor": "a_1f56beee4fd1",
+          "offset": [
+            -4,
+            0,
+            3
+          ]
+        }
+      },
+      {
+        "id": "a_74fd45556b8c",
+        "name": "车夫",
+        "prefabRef": "worker",
+        "spawn": {
+          "anchor": "a_1f56beee4fd1",
+          "offset": [
+            0,
+            0,
+            6
+          ]
+        }
+      }
+    ],
+    "regions": [],
+    "points": []
+  }
+}

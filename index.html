@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>叙事工作台 · Story Agent Studio</title>
+  <link rel="stylesheet" href="./ui/studio.css">
+  <link rel="stylesheet" href="./ui/graph-view.css">
+</head>
+<body>
+  <header>
+
+    <strong>叙事工作台</strong>
+    <span class="muted">Story Agent Studio</span>
+    <div class="spacer"></div>
+    <button id="inspectTraceBtn" class="ghost-btn" title="查看全局所有会话的 Agent 执行轨迹（含会话 ID）">📡 全局轨迹</button>
+    <button id="help">使用说明</button>
+  </header>
+
+  <div class="workspace">
+    <!-- 左侧：故事与主线记录列表 -->
+    <aside class="library">
+      <div class="new-story-group">
+    <button id="toggleLibrary" class="icon-button" aria-label="收起故事记录" title="收起故事记录" aria-expanded="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+    </button>
+        <button id="newStory" class="primary full-btn">＋ 新建故事</button>
+      </div>
+      <div class="section-label">
+        <span>故事记录</span>
+        <button id="refresh" aria-label="刷新记录" title="刷新列表">↻</button>
+      </div>
+      <div id="history"></div>
+      <button id="openSettings" class="settings-button" title="设置" aria-label="设置"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/><path d="m9 3-1 3-3 1-2 3 2 2-1 3 2 3 3-1 2 3h3l1-3 3-1 2-3-2-2 1-3-2-3-3 1-2-3Z"/></svg><span>设置</span></button>
+      <span id="connection" hidden></span>
+    </aside>
+
+    <!-- 中间：自适应叙事工作台（支线单层 / 主线 L1-L2 双层） -->
+    <main>
+      <div class="title-row">
+        <div class="title-left">
+          <div class="breadcrumb-row" id="l2Breadcrumb" hidden>
+            <button id="backToL1Btn" class="crumb-back-btn">← 章节总览</button>
+            <span class="crumb-sep">›</span>
+            <select id="chapterQuickSelect" class="crumb-select" aria-label="切换章节"></select>
+          </div>
+          <div class="title-main-line">
+            <span id="storyKindTag" class="kind-tag side">支线</span>
+            <h1 id="title">让故事在游戏里发生</h1>
+          </div>
+        </div>
+
+        <div class="title-status">
+          <!-- 未保存手动修改提示条 -->
+          <div id="dirtyBar" class="state-bar dirty-bar" hidden>
+            <span class="dirty-dot">●</span>
+            <span>工作区有未保存修改</span>
+            <button id="btnSaveManual" class="xs-btn primary">保存修改</button>
+            <button id="btnDiscardManual" class="xs-btn">还原</button>
+          </div>
+
+          <!-- Cursor 式待确认 Agent 修改提示条 -->
+          <div id="proposalBar" class="state-bar proposal-bar" hidden>
+            <span class="prop-dot">●</span>
+            <span id="proposalBarText">待确认 Agent 修改</span>
+            <button id="btnAcceptTop" class="xs-btn accept-btn">✓ 接受修改</button>
+            <button id="btnRejectTop" class="xs-btn reject-btn">✕ 放弃</button>
+          </div>
+
+          <!-- 已保存版本指示器 -->
+          <span id="saved" class="save-indicator" title="当前工作区已保存版本">本地草稿</span>
+          <select id="versionSelect" class="version-select" title="查看或回滚历史保存版本" hidden></select>
+          <span id="status" class="badge">等待输入</span>
+        </div>
+      </div>
+
+      <div id="notice" role="status"></div>
+
+      <nav class="tabs">
+        <button id="tabChapters" data-view="chapters" hidden>章节总览</button>
+        <button id="tabGraph" data-view="graph" class="active">节点图</button>
+        <button id="tabDsl" data-view="dsl">DSL 源码</button>
+        <button id="tabJson" data-view="json">JSON 源码</button>
+        <button id="tabGame" data-view="game">试玩</button>
+        <span class="spacer"></span>
+        <a id="report" class="verification-link" hidden target="_blank" title="查看试玩记录">✓ 已试玩</a>
+        <button id="download" disabled>导出配置</button>
+      </nav>
+
+      <div class="views">
+        <!-- 主线 L1：章节总览图视图 -->
+        <section id="chaptersView" hidden>
+          <div id="chaptersCanvas" class="chapters-canvas"></div>
+        </section>
+
+        <!-- 节点拓扑图视图 -->
+        <section id="graphView" class="detail">
+          <div id="graph">
+            <div class="empty">
+              <h2>从一段故事开始</h2>
+              <p>在右侧剧情助手对话框输入故事构想，或打开左侧已有记录。<br>生成完成后，在这里查看人物对话、剧情分支或主线章节总览。</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 可编辑 DSL 源码 + Diff 视图 -->
+        <section id="dslView" hidden>
+          <div class="source-head">
+            <div class="source-file-group">
+              <label for="dslFileSelect" class="sr-only">当前文件</label>
+              <select id="dslFileSelect" class="file-select"></select>
+              <span id="dslDirtyHint" class="dsl-dirty-pill" hidden>● 未保存编辑</span>
+            </div>
+            <div class="source-actions">
+              <button id="toggleDiffBtn" class="xs-btn" hidden>切换 Diff 视图</button>
+              <button id="saveDslBtn" class="xs-btn primary" hidden>保存并编译</button>
+              <button id="copyDsl" class="xs-btn">复制</button>
+              <button id="downloadDsl" class="xs-btn">下载</button>
+            </div>
+          </div>
+
+          <!-- 当存在待确认修改或打开 Diff 时展示的红绿对比区 -->
+          <div id="dslDiffBanner" class="dsl-diff-banner" hidden>
+            <div class="dsl-diff-head">
+              <span id="dslDiffSummary">Agent 建议修改对比</span>
+              <div class="dsl-diff-actions">
+                <button id="btnAcceptDsl" class="xs-btn accept-btn">✓ 接受修改</button>
+                <button id="btnRejectDsl" class="xs-btn reject-btn">✕ 放弃</button>
+              </div>
+            </div>
+            <pre id="dslDiffContent" class="diff-pre"></pre>
+          </div>
+
+          <div class="editor-wrap">
+            <div id="lineNumbers" class="line-numbers" aria-hidden="true">1</div>
+            <textarea id="dslEditor" class="dsl-editor" spellcheck="false" placeholder="生成完成后在此显示并可直接编辑 StoryDSL 源码…"></textarea>
+          </div>
+        </section>
+
+        <section id="jsonView" hidden>
+          <div class="source-head">
+            <span id="jsonSourceHint">已编译配置 · 只读</span>
+            <button id="copyJson" class="xs-btn" disabled>复制</button>
+          </div>
+          <textarea id="jsonSource" class="dsl-editor json-source" readonly spellcheck="false" aria-label="JSON 源码（只读）" placeholder="编译通过后在这里查看 JSON 配置。"></textarea>
+        </section>
+
+        <!-- 3D 实机试玩视图 -->
+        <section id="gameView" hidden>
+          <div class="game-head">
+            <span id="gameStatus">编译通过后即可试玩。</span>
+            <button id="launch" disabled>启动试玩</button>
+          </div>
+          <p class="game-hint">进入游戏后点击 New Game。配置会自动加载；在右侧选择角色并传送到附近，点击游戏画面，按空格交互。</p>
+          <div id="gameHost">
+            <div class="empty">
+              <h2>在真实游戏中验证故事</h2>
+              <p>每次启动使用新的游戏会话。</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- 右侧：统一剧情助手 Agent 面板 -->
+    <aside class="assistant">
+      <div class="assistant-head">
+        <strong>剧情助手</strong>
+        <div class="assistant-head-right">
+          <button id="openMemoryBtn" class="xs-btn ghost-btn" title="查看与编辑当前故事专属的长期记忆（绑定当前故事）">🧠 故事记忆 <span id="memCountBadge" class="pill-count">0</span></button>
+          <button id="clearChatBtn" class="xs-btn ghost-btn" title="清理当前对话与异常状态（快捷键：输入 /clear）"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m16 3-7 9m-3 0 5 4 6-6-5-4M6 12l-3 6 6 3 4-5M5 17l4 2"/></svg><span>清理上下文</span></button>
+          <span class="assistant-sub" id="agentRunStatus">就绪</span>
+        </div>
+      </div>
+
+      <!-- 对话与卡片流 -->
+      <div id="chatStream" class="chat-stream"></div>
+
+      <div id="error" class="chat-error" role="alert"></div>
+
+      <!-- 底部统一对话输入栏 -->
+      <div class="chat-composer">
+        <textarea id="chatInput" rows="3" placeholder="描述你想创作的支线/主线故事，或对当前故事提出修改、提问…（支持 /clear 清理上下文，Enter 发送）"></textarea>
+        <div class="composer-bar">
+          <div class="composer-tools">
+            <label class="file-button xs-btn" title="导入本地 TXT/MD 故事文本">导入文本<input id="importFile" type="file" accept=".txt,.md" hidden></label>
+          </div>
+          <div class="composer-send">
+            <button id="cancelRunBtn" class="xs-btn reject-btn" hidden>取消生成</button>
+            <button id="sendChatBtn" class="primary send-btn">发送</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- 当前故事专属长期记忆弹窗（绑定当前故事，条目可编辑/新增/删除） -->
+  <dialog id="memoryDialog" class="wide-dialog">
+    <button id="closeMemoryDialog" class="close" aria-label="关闭">×</button>
+    <h2>🧠 故事长期记忆 (`memory.json`)</h2>
+    <div id="memoryStoryBoundBar" class="dialog-meta-bar"></div>
+    <div class="trace-dialog-body">
+      <div class="memory-add-box">
+        <div class="memory-add-title">＋ 新增当前故事记忆条目（上限 8 条 · 仅作用于当前故事）</div>
+        <div class="memory-form-grid">
+          <input id="newMemTopic" class="mem-input" placeholder="主题分类（如：角色台词与设定规范）">
+          <input id="newMemEntities" class="mem-input" placeholder="关联实体（逗号分隔，如：liu, 老刘；留空代表当前故事全局）">
+          <input id="newMemRule" class="mem-input full-span" placeholder="长期规则内容（必填，如：老刘在所有分支中统一自称老夫）">
+          <input id="newMemEvent" class="mem-input" placeholder="触发事件/背景说明（选填）">
+          <div class="mem-form-actions">
+            <button id="addMemoryBtn" class="xs-btn primary">＋ 添加记忆条目</button>
+          </div>
+        </div>
+      </div>
+      <h3>当前故事已绑定记忆条目（可直接修改保存或删除）</h3>
+      <div id="memoryListBox" class="trace-box memory-list-box"></div>
+    </div>
+  </dialog>
+
+  <!-- 全局 Agent 执行轨迹检视弹窗（支持跨会话查看并记录会话 ID） -->
+  <dialog id="traceDialog" class="wide-dialog">
+    <button id="closeTraceDialog" class="close" aria-label="关闭">×</button>
+    <h2>📡 全局 Agent 执行轨迹 (`traces/turn-*.json`)</h2>
+    <div class="dialog-filter-bar">
+      <label for="traceSessionFilter">会话筛选：</label>
+      <select id="traceSessionFilter" class="xs-select trace-session-select">
+        <option value="">全部会话（全局）</option>
+      </select>
+      <button id="filterCurrentSessionBtn" class="xs-btn">仅看当前会话</button>
+      <button id="refreshTracesBtn" class="xs-btn">↻ 刷新</button>
+      <span id="traceTotalCount" class="muted"></span>
+    </div>
+    <div class="trace-dialog-body">
+      <div id="traceListBox" class="trace-box"></div>
+    </div>
+  </dialog>
+
+  <dialog id="settingsDialog" class="settings-dialog" aria-labelledby="settingsTitle">
+    <button id="closeSettings" class="close" aria-label="关闭设置">×</button>
+    <h2 id="settingsTitle">设置</h2>
+    <form id="providerForm">
+      <label class="setting-label">模型服务<select id="providerMode"><option value="default">使用默认服务</option><option value="custom">自定义 OpenAI 兼容服务</option></select></label>
+      <p id="providerDefault" class="muted">由默认服务提供模型，无需填写密钥。</p>
+      <fieldset id="providerFields" hidden>
+        <label class="setting-label">API Base URL<input id="providerUrl" type="url" placeholder="https://api.example.com/v1" autocomplete="off"></label>
+        <p class="setting-help">填写服务商提供的基础地址，通常以 /v1 结尾。</p>
+        <label class="setting-label">API Key<input id="providerKey" type="password" placeholder="输入 API Key" autocomplete="off"></label>
+        <label class="setting-label">模型名称<input id="providerModel" placeholder="服务商提供的模型 ID" autocomplete="off"></label>
+        <p class="setting-help">密钥仅保留在当前浏览器会话。启用后，故事内容将发送至此服务。</p>
+        <button type="button" id="testProvider">测试连接</button>
+      </fieldset>
+      <p id="providerResult" role="status" class="setting-help"></p>
+      <div class="settings-actions"><button type="button" id="resetProvider">恢复默认</button><button class="primary" type="submit">保存设置</button></div>
+    </form>
+  </dialog>
+
+  <!-- 使用说明弹窗 -->
+  <dialog id="helpDialog">
+    <button id="closeHelp" class="close" aria-label="关闭使用说明">×</button>
+    <h2>叙事工作台使用指南</h2>
+    <ol>
+      <li><b>管理故事</b><p>左侧每条记录（支线或主线）拥有独立的工作区文件、Agent 对话历史与长期记忆。点击「＋ 新建故事」即可开启新篇章。</p></li>
+      <li><b>生成与选择题澄清</b><p>输入故事构想后，工作流卡片会实时流式展示「理解故事 → 生成 DSL → 编译校验」。遇到关键分支或道具映射待确认时，可直接勾选推荐选项继续。</p></li>
+      <li><b>源码编辑与局部修改确认</b><p>支持在「DSL 源码」直接手改代码，也可让剧情助手局部修改。助手的修改会经过编译器实时校验并生成红绿 Diff，点击「✓ 接受修改」即可保存新版本。</p></li>
+      <li><b>规划主线章节</b><p>在章节总览中查看故事分支，点击章节编辑细节。目前支持逐章试玩，章节之间的衔接用于故事规划。</p></li>
+    </ol>
+  </dialog>
+
+  
+  
+  
+  
+  
+  
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

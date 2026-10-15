@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env*
+!.env.example
+.dev.vars*
+.wrangler/
+test-results/
+*.log
+
+public/game/Build/
+public/game/TemplateData/
+release-assets/

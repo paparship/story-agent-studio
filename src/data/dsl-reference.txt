@@ -1,0 +1,57 @@
+版本：0.3-draft；运行目标：playground-quests-v3。
+以下是语法签名，<> 表示需填写的值；角色、任务、阶段、物品和点位别名可使用中文标识符。字符串为 JSON 双引号字符串；布尔值 true/false；列表用方括号。每层缩进 4 个空格，块头以冒号结束，注释以 # 开始。
+
+文件顺序：文件头 → 资源与空间声明 → 任务声明 → 交互入口。
+文件头三行：story "<故事标题>"，dsl "0.3-draft"，target "playground-quests-v3"。
+
+声明签名：
+use item <别名> = "<item资源ID>"
+actor <别名> = scene("<场景对象ID>")
+actor <别名> = spawn("<预制体ID>", anchor=<scene演员>, offset=[<x>, <y>, <z>])
+region <别名> = circle(anchor=<演员>, radius=<0.5至30>)
+point <别名> = near(<演员>, min=<0.5至20>, max=<min至30>, seed=<0至1000000的整数>)
+point <别名> = sample(<区域>, seed=<整数>)
+point <别名> = offset(<演员>, [<x>, <y>, <z>])
+offset 的各分量范围 -50 至 50，单位米。声明函数的关键字参数用逗号隔开。
+同一 scene 对象使用一个别名。玩家是库存所有者的内建名字。演员最多8、区域最多16、点位最多32。
+
+任务块头：quest <别名> id=<小写英文id> title="<显示名>":
+任务块内是以下声明，每条占一行：
+task <阶段别名> title="<显示名>" after=[<前置阶段别名>, ...] final=<布尔值>
+task <阶段别名> title="<显示名>" after=[...] collect=<物品别名> count=<正整数> final=<布尔值>
+reward <物品别名> count=<正整数>
+after 默认空列表；final 默认 false；每条任务恰有一个 final=true 阶段。after 中的阶段属于同一任务，全部完成后自动激活该阶段；空列表的阶段接取任务时激活。普通阶段通过 finish 完成；collect 阶段按激活以后新增库存数量累计并自动完成。完成 final 阶段结束任务并发放任务奖励一次。包最多4任务、32阶段、8交互图，奖励使用已声明物品，repeatable 固定 false。
+
+入口块头：on interact <演员别名> id=<小写英文id> blockPlayer=<布尔值> blockCamera=<布尔值>:
+blockPlayer 默认 true，blockCamera 默认 false。一个演员对应一个入口。交互图最多200节点。入口内放顺序动作和条件块，所有路径通过 end 结束。
+
+条件块头：if <条件>:；后续同级 elif <条件>: 和 else:。
+条件：quest(<任务别名>).<状态>；task(<任务别名>.<阶段别名>).<状态>；inventory(<物品别名>) >= <非负整数>。
+任务状态 notAdded/inactive/active/finished/failed，阶段状态 inactive/active/finished/failed。and 优先于 or，支持 not 与括号。
+条件分支结束后继续同级后续语句；在分支内 end 表示结束该入口。每条分支和处理块包含至少一条语句。
+
+原子语句签名：
+say <演员别名> "<完整台词>" — 该演员说话，等待玩家关闭对话。
+accept quest <任务别名> — 接取独立任务，动作后同级紧跟 rejected: 处理块。
+finish task <任务别名>.<阶段别名> — 将活动阶段完成；非活动阶段运行器跳过。
+move <spawn演员> to <点位别名> speed=<0.1至8> stop=<0.1至1> timeout=<0.1至30>s
+move <spawn演员> to near(<另一演员>, distance=<0.8至10>) speed=<数值> stop=<数值> timeout=<数值>s
+face <spawn演员> toward <另一演员> duration=<0.01至5>s
+wait <0至30>s
+fade to=<0至1> duration=<0至5>s
+take <物品别名> count=<正整数> from 玩家
+transfer <物品别名> count=<正整数> from 玩家 to <演员别名>
+end
+语句的关键字参数用空格隔开。move 的 speed/stop/timeout 默认2/0.2/12s；face duration 默认0.5s。move 和 face 的执行主体是 spawn 创建的演员，目标可为 scene 或 spawn 演员。
+transfer 从玩家队伍库存扣除物品并记录接收演员；当前接收端是叙事接收者，独立 NPC 持久背包仍待接入。
+
+parallel timeout=<0.1至30>s: — 子块包含2至4条 move/face/wait，每演员在一组内执行一项动作，全部成功后继续。
+move、face、wait、parallel、transfer 配 failed: 分支；该分支紧跟所属动作且与动作同级，也可由入口末尾的 on failure: 统一接管。
+take 和 transfer 配同级 insufficient: 分支；transfer 同时配置 failed: 或入口 on failure:。
+accept 配同级 rejected: 分支。
+failed/insufficient/rejected/on failure 处理块支持 say/fade/end，路径用 end 收尾。并行子动作由所属 parallel 的 failed 分支处理。
+入口主体的正常路径先完成并以 end 收尾；on failure: 是入口最后一个同级子块，在正常路径的 end 之后声明，内部失败路径也以 end 收尾。
+say 的说话人引用 actor 声明中的别名；玩家是库存所有者的内建名字。
+
+@<小写英文id> 写在交互入口内部，可独占一行，标识紧接着的动作或条件节点。同图标识唯一，用于映射、差异和调试。交互入口本身使用 id 参数命名。
+运行边界：目前触发器为玩家与绑定演员交互，演出包含台词、NPC移动/转向、等待、渐变、并行、库存扣除与任务状态。阶段依赖决定进度，任务与图通过别名引用。

@@ -1,0 +1,14 @@
+{
+  "revision": "playground-catalog-2026-10-09-v1",
+  "resources": [
+    {"id":"world.witch_town","type":"scene_actor","name":"镇口女巫","purpose":"World 场景镇口的既有对象，可作为场景演员或出生锚点"},
+    {"id":"world.witch_forest","type":"scene_actor","name":"森林遗迹女巫","purpose":"World 场景遗迹位置的既有对象"},
+    {"id":"world.witch_outpost","type":"scene_actor","name":"前哨女巫","purpose":"World 场景前哨位置的既有对象"},
+    {"id":"knight","type":"prefab","name":"骑士外观","purpose":"创建可移动、可交互的 NPC，可代表守卫等角色"},
+    {"id":"worker","type":"prefab","name":"工人外观","purpose":"创建可移动、可交互的 NPC，可代表普通人物"},
+    {"id":"ruined_cheese","type":"item","name":"遗迹奶酪","purpose":"可计数的库存物品"},
+    {"id":"high_potion","type":"item","name":"高级药水","purpose":"库存物品，可作为任务奖励"},
+    {"id":"revive_potion","type":"item","name":"复活药水","purpose":"库存物品，可作为任务奖励"},
+    {"id":"magic_crystal","type":"item","name":"魔力水晶","purpose":"库存物品，可作为任务奖励"}
+  ]
+}

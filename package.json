@@ -1,0 +1,25 @@
+{
+  "name": "story-agent-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@noble/hashes": "^2.0.1",
+    "idb": "^8.0.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261014.1",
+    "@types/node": "^22.18.10",
+    "fake-indexeddb": "^6.2.4",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.9",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.151.0"
+  }
+}

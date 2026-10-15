@@ -1,0 +1,981 @@
+{
+  "schemaVersion": "0.4.0",
+  "packageId": "story_905d5f378078",
+  "revision": "dsl-63fcf340d75c",
+  "stage": "dsl",
+  "capabilityProfile": "playground-quests-v3",
+  "quests": [
+    {
+      "id": "town_road_check",
+      "nameKey": "town_road_check.title",
+      "repeatable": false,
+      "tasks": [
+        {
+          "id": "t_dc36d09c45ca",
+          "nameKey": "t_dc36d09c45ca.title",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "always": true
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": false
+        },
+        {
+          "id": "t_1b91e96d88e3",
+          "nameKey": "t_1b91e96d88e3.title",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "all": [
+                {
+                  "taskStatus": {
+                    "quest": "town_road_check",
+                    "task": "t_dc36d09c45ca",
+                    "is": "finished"
+                  }
+                }
+              ]
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": false
+        },
+        {
+          "id": "t_807a297bd1cf",
+          "nameKey": "t_807a297bd1cf.title",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "all": [
+                {
+                  "taskStatus": {
+                    "quest": "town_road_check",
+                    "task": "t_1b91e96d88e3",
+                    "is": "finished"
+                  }
+                }
+              ]
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": false
+        },
+        {
+          "id": "t_048ebcaa4544",
+          "nameKey": "t_048ebcaa4544.title",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "all": [
+                {
+                  "taskStatus": {
+                    "quest": "town_road_check",
+                    "task": "t_807a297bd1cf",
+                    "is": "finished"
+                  }
+                }
+              ]
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": true
+        }
+      ],
+      "rewards": {
+        "items": [],
+        "experienceProfileRef": "none"
+      }
+    }
+  ],
+  "graphs": [
+    {
+      "id": "liaison_talk",
+      "entry": "n_24",
+      "settings": {
+        "blockPlayer": true,
+        "blockCamera": false
+      },
+      "nodes": [
+        {
+          "id": "n_24",
+          "type": "condition",
+          "params": {
+            "when": {
+              "questStatus": {
+                "quest": "town_road_check",
+                "is": "notAdded"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "liaison_accept_errand",
+            "no": "n_32"
+          }
+        },
+        {
+          "id": "liaison_accept_errand",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_baa3e2cf8507",
+            "textKey": "liaison_talk.liaison_accept_errand",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_27"
+          }
+        },
+        {
+          "id": "n_27",
+          "type": "quest.add",
+          "params": {
+            "quest": "town_road_check"
+          },
+          "outputs": {
+            "next": "n_31",
+            "rejected": "n_29"
+          }
+        },
+        {
+          "id": "n_29",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_baa3e2cf8507",
+            "textKey": "liaison_talk.n_29",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_30"
+          }
+        },
+        {
+          "id": "n_30",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_31",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_32",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "town_road_check",
+                "task": "t_807a297bd1cf",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "liaison_report_complete",
+            "no": "n_39"
+          }
+        },
+        {
+          "id": "liaison_report_complete",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_baa3e2cf8507",
+            "textKey": "liaison_talk.liaison_report_complete",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_35"
+          }
+        },
+        {
+          "id": "n_35",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "town_road_check",
+            "task": "t_807a297bd1cf",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "n_36"
+          }
+        },
+        {
+          "id": "n_36",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_baa3e2cf8507",
+            "textKey": "liaison_talk.n_36",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_37"
+          }
+        },
+        {
+          "id": "n_37",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "town_road_check",
+            "task": "t_048ebcaa4544",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "n_38"
+          }
+        },
+        {
+          "id": "n_38",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_39",
+          "type": "condition",
+          "params": {
+            "when": {
+              "questStatus": {
+                "quest": "town_road_check",
+                "is": "finished"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_40",
+            "no": "n_42"
+          }
+        },
+        {
+          "id": "n_40",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_baa3e2cf8507",
+            "textKey": "liaison_talk.n_40",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_41"
+          }
+        },
+        {
+          "id": "n_41",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_42",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "town_road_check",
+                "task": "t_1b91e96d88e3",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_43",
+            "no": "n_46"
+          }
+        },
+        {
+          "id": "n_43",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_baa3e2cf8507",
+            "textKey": "liaison_talk.n_43",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_44"
+          }
+        },
+        {
+          "id": "n_44",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_46",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_baa3e2cf8507",
+            "textKey": "liaison_talk.n_46",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_47"
+          }
+        },
+        {
+          "id": "n_47",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        }
+      ]
+    },
+    {
+      "id": "guard_talk",
+      "entry": "n_50",
+      "settings": {
+        "blockPlayer": true,
+        "blockCamera": false
+      },
+      "nodes": [
+        {
+          "id": "n_50",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "town_road_check",
+                "task": "t_dc36d09c45ca",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "guard_first_notify",
+            "no": "n_73"
+          }
+        },
+        {
+          "id": "guard_first_notify",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_4059fb16b1c5",
+            "textKey": "guard_talk.guard_first_notify",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_53"
+          }
+        },
+        {
+          "id": "n_53",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "town_road_check",
+            "task": "t_dc36d09c45ca",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "guard_first_move"
+          }
+        },
+        {
+          "id": "guard_first_move",
+          "type": "parallel",
+          "params": {
+            "actions": [
+              {
+                "id": "action_0",
+                "type": "actor.move",
+                "params": {
+                  "actor": "a_4059fb16b1c5",
+                  "target": {
+                    "kind": "point",
+                    "point": "p_7203e103e390"
+                  },
+                  "speed": 2,
+                  "stop": 0.2,
+                  "timeout": 12.0
+                }
+              },
+              {
+                "id": "action_1",
+                "type": "actor.move",
+                "params": {
+                  "actor": "a_2a8d4048e9ae",
+                  "target": {
+                    "kind": "point",
+                    "point": "p_e7dfa29efc5b"
+                  },
+                  "speed": 2,
+                  "stop": 0.2,
+                  "timeout": 12.0
+                }
+              }
+            ],
+            "timeout": 15.0
+          },
+          "outputs": {
+            "next": "guard_first_face",
+            "failed": "n_59"
+          }
+        },
+        {
+          "id": "n_59",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_4059fb16b1c5",
+            "textKey": "guard_talk.n_59",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_60"
+          }
+        },
+        {
+          "id": "n_60",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "guard_first_face",
+          "type": "parallel",
+          "params": {
+            "actions": [
+              {
+                "id": "action_0",
+                "type": "actor.face",
+                "params": {
+                  "actor": "a_4059fb16b1c5",
+                  "toward": "a_2a8d4048e9ae",
+                  "duration": 0.5
+                }
+              },
+              {
+                "id": "action_1",
+                "type": "actor.face",
+                "params": {
+                  "actor": "a_2a8d4048e9ae",
+                  "toward": "a_4059fb16b1c5",
+                  "duration": 0.5
+                }
+              }
+            ],
+            "timeout": 5.0
+          },
+          "outputs": {
+            "next": "n_68",
+            "failed": "n_66"
+          }
+        },
+        {
+          "id": "n_66",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_4059fb16b1c5",
+            "textKey": "guard_talk.n_66",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_67"
+          }
+        },
+        {
+          "id": "n_67",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_68",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_4059fb16b1c5",
+            "textKey": "guard_talk.n_68",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_69"
+          }
+        },
+        {
+          "id": "n_69",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_2a8d4048e9ae",
+            "textKey": "guard_talk.n_69",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_70"
+          }
+        },
+        {
+          "id": "n_70",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "town_road_check",
+            "task": "t_1b91e96d88e3",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "n_71"
+          }
+        },
+        {
+          "id": "n_71",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_4059fb16b1c5",
+            "textKey": "guard_talk.n_71",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_72"
+          }
+        },
+        {
+          "id": "n_72",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_73",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "town_road_check",
+                "task": "t_1b91e96d88e3",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "guard_retry_meeting",
+            "no": "n_95"
+          }
+        },
+        {
+          "id": "guard_retry_meeting",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_4059fb16b1c5",
+            "textKey": "guard_talk.guard_retry_meeting",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "guard_retry_move"
+          }
+        },
+        {
+          "id": "guard_retry_move",
+          "type": "parallel",
+          "params": {
+            "actions": [
+              {
+                "id": "action_0",
+                "type": "actor.move",
+                "params": {
+                  "actor": "a_4059fb16b1c5",
+                  "target": {
+                    "kind": "point",
+                    "point": "p_7203e103e390"
+                  },
+                  "speed": 2,
+                  "stop": 0.2,
+                  "timeout": 12.0
+                }
+              },
+              {
+                "id": "action_1",
+                "type": "actor.move",
+                "params": {
+                  "actor": "a_2a8d4048e9ae",
+                  "target": {
+                    "kind": "point",
+                    "point": "p_e7dfa29efc5b"
+                  },
+                  "speed": 2,
+                  "stop": 0.2,
+                  "timeout": 12.0
+                }
+              }
+            ],
+            "timeout": 15.0
+          },
+          "outputs": {
+            "next": "guard_retry_face",
+            "failed": "n_81"
+          }
+        },
+        {
+          "id": "n_81",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_4059fb16b1c5",
+            "textKey": "guard_talk.n_81",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_82"
+          }
+        },
+        {
+          "id": "n_82",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "guard_retry_face",
+          "type": "parallel",
+          "params": {
+            "actions": [
+              {
+                "id": "action_0",
+                "type": "actor.face",
+                "params": {
+                  "actor": "a_4059fb16b1c5",
+                  "toward": "a_2a8d4048e9ae",
+                  "duration": 0.5
+                }
+              },
+              {
+                "id": "action_1",
+                "type": "actor.face",
+                "params": {
+                  "actor": "a_2a8d4048e9ae",
+                  "toward": "a_4059fb16b1c5",
+                  "duration": 0.5
+                }
+              }
+            ],
+            "timeout": 5.0
+          },
+          "outputs": {
+            "next": "n_90",
+            "failed": "n_88"
+          }
+        },
+        {
+          "id": "n_88",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_4059fb16b1c5",
+            "textKey": "guard_talk.n_88",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_89"
+          }
+        },
+        {
+          "id": "n_89",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_90",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_4059fb16b1c5",
+            "textKey": "guard_talk.n_90",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_91"
+          }
+        },
+        {
+          "id": "n_91",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_2a8d4048e9ae",
+            "textKey": "guard_talk.n_91",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_92"
+          }
+        },
+        {
+          "id": "n_92",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "town_road_check",
+            "task": "t_1b91e96d88e3",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "n_93"
+          }
+        },
+        {
+          "id": "n_93",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_4059fb16b1c5",
+            "textKey": "guard_talk.n_93",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_94"
+          }
+        },
+        {
+          "id": "n_94",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_95",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "town_road_check",
+                "task": "t_807a297bd1cf",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_96",
+            "no": "n_98"
+          }
+        },
+        {
+          "id": "n_96",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_4059fb16b1c5",
+            "textKey": "guard_talk.n_96",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_97"
+          }
+        },
+        {
+          "id": "n_97",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_98",
+          "type": "condition",
+          "params": {
+            "when": {
+              "questStatus": {
+                "quest": "town_road_check",
+                "is": "finished"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_99",
+            "no": "n_102"
+          }
+        },
+        {
+          "id": "n_99",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_4059fb16b1c5",
+            "textKey": "guard_talk.n_99",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_100"
+          }
+        },
+        {
+          "id": "n_100",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_102",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_4059fb16b1c5",
+            "textKey": "guard_talk.n_102",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_103"
+          }
+        },
+        {
+          "id": "n_103",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        }
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "id": "bind_liaison_talk",
+      "bindingKey": "actor:a_baa3e2cf8507",
+      "enabledWhen": {
+        "always": true
+      },
+      "interaction": {
+        "graph": "liaison_talk",
+        "trigger": "interact",
+        "profileRef": "playground_interact",
+        "reentry": "ignoreWhileRunning"
+      }
+    },
+    {
+      "id": "bind_guard_talk",
+      "bindingKey": "actor:a_4059fb16b1c5",
+      "enabledWhen": {
+        "always": true
+      },
+      "interaction": {
+        "graph": "guard_talk",
+        "trigger": "interact",
+        "profileRef": "playground_interact",
+        "reentry": "ignoreWhileRunning"
+      }
+    }
+  ],
+  "texts": {
+    "town_road_check.title": "镇口路况核对",
+    "t_dc36d09c45ca.title": "已接受委托：通知守卫",
+    "t_1b91e96d88e3.title": "已通知守卫：等待会合",
+    "t_807a297bd1cf.title": "会合完成：回报联络员",
+    "t_048ebcaa4544.title": "任务完成",
+    "liaison_talk.n_46": "守卫就在镇口附近，去通知他吧。",
+    "liaison_talk.n_43": "他们碰完面后再来确认吧。",
+    "liaison_talk.n_40": "路已经确认过了。",
+    "liaison_talk.n_36": "好，北路可以通行，委托完成。",
+    "liaison_talk.liaison_report_complete": "路况确认了吗？",
+    "liaison_talk.n_29": "你已经接过这个委托了。",
+    "liaison_talk.liaison_accept_errand": "请通知守卫，到镇口一起核对路况。",
+    "guard_talk.n_102": "你还没接委托吧。",
+    "guard_talk.n_99": "路况已经确认了。",
+    "guard_talk.n_96": "已经会合过了，去找联络员吧。",
+    "guard_talk.n_93": "会合结束，去告诉联络员吧。",
+    "guard_talk.n_91": "那我就按北路安排送货。",
+    "guard_talk.n_90": "北路可以通行。",
+    "guard_talk.n_88": "方向没对准，稍后再试。",
+    "guard_talk.n_81": "有人还没到，我们稍后再试。",
+    "guard_talk.guard_retry_meeting": "我们再去碰个面。",
+    "guard_talk.n_71": "会合结束，去告诉联络员吧。",
+    "guard_talk.n_69": "那我就按北路安排送货。",
+    "guard_talk.n_68": "北路可以通行。",
+    "guard_talk.n_66": "方向没对准，稍后再试。",
+    "guard_talk.n_59": "有人还没到，我们稍后再试。",
+    "guard_talk.guard_first_notify": "知道了，我们去碰个面。"
+  },
+  "spatial": {
+    "actors": [
+      {
+        "id": "a_d8f5088468cc",
+        "name": "镇口",
+        "bindingKey": "world.witch_town"
+      },
+      {
+        "id": "a_baa3e2cf8507",
+        "name": "联络员",
+        "prefabRef": "worker",
+        "spawn": {
+          "anchor": "a_d8f5088468cc",
+          "offset": [
+            2,
+            0,
+            0
+          ]
+        }
+      },
+      {
+        "id": "a_4059fb16b1c5",
+        "name": "守卫",
+        "prefabRef": "knight",
+        "spawn": {
+          "anchor": "a_d8f5088468cc",
+          "offset": [
+            -4,
+            0,
+            2
+          ]
+        }
+      },
+      {
+        "id": "a_2a8d4048e9ae",
+        "name": "另一名工人",
+        "prefabRef": "worker",
+        "spawn": {
+          "anchor": "a_d8f5088468cc",
+          "offset": [
+            -2,
+            0,
+            4
+          ]
+        }
+      }
+    ],
+    "regions": [
+      {
+        "id": "r_c5988e61ec74",
+        "name": "会合区",
+        "anchor": "a_baa3e2cf8507",
+        "radius": 5
+      }
+    ],
+    "points": [
+      {
+        "id": "p_7203e103e390",
+        "kind": "area",
+        "region": "r_c5988e61ec74",
+        "seed": 101
+      },
+      {
+        "id": "p_e7dfa29efc5b",
+        "kind": "area",
+        "region": "r_c5988e61ec74",
+        "seed": 202
+      }
+    ]
+  }
+}

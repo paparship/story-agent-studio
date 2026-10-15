@@ -1,0 +1,65 @@
+{
+  "brief-contract.txt": "所有字段均填写，集合为空时使用 []，未知的可空字段使用 null。\n{\n  \"title\": string,\n  \"summary\": string,\n  \"actors\": [{\"id\": string, \"name\": string, \"role\": string, \"source_lines\": integer[]}],\n  \"events\": [{\"id\": string, \"description\": string, \"actor_ids\": string[], \"source_lines\": integer[]}],\n  \"prerequisites\": [{\"event_id\": string, \"requires_event_ids\": string[], \"condition\": string|null, \"source_lines\": integer[]}],\n  \"quoted_lines\": [{\"speaker_id\": string|null, \"text\": string, \"source_lines\": integer[]}],\n  \"ending\": [{\"description\": string, \"source_lines\": integer[]}],\n  \"resource_bindings\": [{\"subject\": string, \"resource_id\": string|null}],\n  \"assumptions\": [{\"description\": string, \"source_lines\": integer[]}],\n  \"questions\": [{\"question\": string, \"related_ids\": string[], \"source_lines\": integer[]}]\n}\nid 是本清单中的局部标识；resource_id 是资源目录标识。\nsource_lines 对应原文行号；实现推导使用空数组。\nprerequisites 描述事件发生前提；quoted_lines 保留原文明确给出的台词。\n\ntitle 用约 6–12 字概括故事主题；summary 用一句话概括故事目标与结果。\n",
+  "generate.system.txt": "把故事实现为可编译、可运行的游戏剧情 DSL。根据确认后的意图清单组织角色、触发条件、任务推进和行为编排。输出完整 DSL 源码。\n",
+  "generate.user.txt": "故事原文：\n{{story_with_lines}}\n\n确认后的意图清单：\n{{confirmed_brief}}\n\n当前 DSL 语法与运行语义：\n{{dsl_reference}}\n\n可用资源：\n{{resource_catalog}}\n\n目标环境：\n{{target_context}}\n",
+  "main_chapter.system.txt": "根据作者故事和章节规划，编写指定章节的完整可编译 DSL。依据能力与语法参考表达实际可执行行为，台词保留作者意图。输出 DSL 源码。当前章节独立试玩，章节间条件保留在规划中。",
+  "main_chapter.user.txt": "作者故事：\n{{story}}\n章节规划：\n{{plan}}\n当前章节：\n{{chapter}}\n语法参考：\n{{dsl_reference}}\n能力：\n{{capabilities}}\n资源目录：\n{{resource_catalog}}",
+  "main_plan.system.txt": "根据作者故事规划主线章节。输出 JSON：title、summary、chapters。chapters 为数组，每章包含 id（英文字母开头的字母数字下划线）、title、summary、next（数组，每项 target 为章节 id，label 为推进条件描述）。章节结构表达作者意图。当前章节连接是规划信息；各章将在独立会话中试玩，跨章状态尚未接入运行时。",
+  "main_plan.user.txt": "作者故事：\n{{story}}\n资源目录：\n{{resource_catalog}}",
+  "repair.system.txt": "根据诊断修正游戏剧情 DSL，使其符合语法与运行约束，并保持故事意图。输出修正后的完整 DSL 源码。\n",
+  "repair.user.txt": "故事原文：\n{{story_with_lines}}\n\n确认后的意图清单：\n{{confirmed_brief}}\n\n当前 DSL：\n{{current_dsl}}\n\n诊断：\n{{diagnostics}}\n\n当前 DSL 语法与运行语义：\n{{dsl_reference}}\n\n可用资源：\n{{resource_catalog}}\n\n目标环境：\n{{target_context}}\n",
+  "understand.system.txt": "将故事整理为可在游戏中实现的意图清单。依据原文提取角色、事件、台词、顺序和结局，结合能力与资源目录标注实现所需的信息。输出符合给定结构的 JSON 对象。\n",
+  "understand.user.txt": "故事原文（带行号）：\n{{story_with_lines}}\n\n游戏能力：\n{{capabilities}}\n\n可用资源：\n{{resource_catalog}}\n\n用户补充：\n{{user_answers}}\n\n输出结构：\n{{brief_contract}}\n\n关键事实附 source_lines。资源映射使用目录中的 ID；能由现有资源和合理默认值确定的实现细节写入 assumptions；需要作者决定、会影响故事含义的问题写入 questions。related_ids 使用本清单中 actors 或 events 的 id。\n",
+  "manifest": {
+    "version": "v0.4",
+    "status": "initial-evaluation",
+    "model": "deepseek-v4-flash",
+    "stages": {
+      "understand": {
+        "system": "understand.system.txt",
+        "user": "understand.user.txt",
+        "variables": [
+          "story_with_lines",
+          "capabilities",
+          "resource_catalog",
+          "user_answers",
+          "brief_contract"
+        ]
+      },
+      "generate": {
+        "system": "generate.system.txt",
+        "user": "generate.user.txt",
+        "variables": [
+          "story_with_lines",
+          "confirmed_brief",
+          "dsl_reference",
+          "resource_catalog",
+          "target_context"
+        ]
+      },
+      "repair": {
+        "system": "repair.system.txt",
+        "user": "repair.user.txt",
+        "variables": [
+          "story_with_lines",
+          "confirmed_brief",
+          "current_dsl",
+          "diagnostics",
+          "dsl_reference",
+          "resource_catalog",
+          "target_context"
+        ]
+      },
+      "main_plan": {
+        "system": "main_plan.system.txt",
+        "user": "main_plan.user.txt",
+        "variables": []
+      },
+      "main_chapter": {
+        "system": "main_chapter.system.txt",
+        "user": "main_chapter.user.txt",
+        "variables": []
+      }
+    }
+  }
+}

@@ -1,0 +1,802 @@
+{
+  "schemaVersion": "0.4.0",
+  "packageId": "story_8abd0623eb5a",
+  "revision": "dsl-d0c68c756f0e",
+  "stage": "dsl",
+  "capabilityProfile": "playground-quests-v3",
+  "quests": [
+    {
+      "id": "cart_investigation",
+      "nameKey": "cart_investigation.title",
+      "repeatable": false,
+      "tasks": [
+        {
+          "id": "t_50cd8e16a9e7",
+          "nameKey": "t_50cd8e16a9e7.title",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "always": true
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": false
+        },
+        {
+          "id": "t_8606334da200",
+          "nameKey": "t_8606334da200.title",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "all": [
+                {
+                  "taskStatus": {
+                    "quest": "cart_investigation",
+                    "task": "t_50cd8e16a9e7",
+                    "is": "finished"
+                  }
+                }
+              ]
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": false
+        },
+        {
+          "id": "t_3ec9bd6828db",
+          "nameKey": "t_3ec9bd6828db.title",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "all": [
+                {
+                  "taskStatus": {
+                    "quest": "cart_investigation",
+                    "task": "t_50cd8e16a9e7",
+                    "is": "finished"
+                  }
+                }
+              ]
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": false
+        },
+        {
+          "id": "t_fed1c15b6148",
+          "nameKey": "t_fed1c15b6148.title",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "all": [
+                {
+                  "taskStatus": {
+                    "quest": "cart_investigation",
+                    "task": "t_8606334da200",
+                    "is": "finished"
+                  }
+                },
+                {
+                  "taskStatus": {
+                    "quest": "cart_investigation",
+                    "task": "t_3ec9bd6828db",
+                    "is": "finished"
+                  }
+                }
+              ]
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": true
+        }
+      ],
+      "rewards": {
+        "items": [
+          {
+            "item": "high_potion",
+            "quantity": 1
+          }
+        ],
+        "experienceProfileRef": "none"
+      }
+    },
+    {
+      "id": "family_message",
+      "nameKey": "family_message.title",
+      "repeatable": false,
+      "tasks": [
+        {
+          "id": "t_ce0cbaf944f7",
+          "nameKey": "t_ce0cbaf944f7.title",
+          "activate": {
+            "mode": "auto",
+            "when": {
+              "always": true
+            }
+          },
+          "complete": {
+            "mode": "manual"
+          },
+          "finishQuest": true
+        }
+      ],
+      "rewards": {
+        "items": [],
+        "experienceProfileRef": "none"
+      }
+    }
+  ],
+  "graphs": [
+    {
+      "id": "client_dialogue",
+      "entry": "n_26",
+      "settings": {
+        "blockPlayer": true,
+        "blockCamera": false
+      },
+      "nodes": [
+        {
+          "id": "n_26",
+          "type": "condition",
+          "params": {
+            "when": {
+              "questStatus": {
+                "quest": "cart_investigation",
+                "is": "notAdded"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_27",
+            "no": "n_40"
+          }
+        },
+        {
+          "id": "n_27",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_35b81cdb9a6b",
+            "textKey": "client_dialogue.n_27",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_28"
+          }
+        },
+        {
+          "id": "n_28",
+          "type": "quest.add",
+          "params": {
+            "quest": "cart_investigation"
+          },
+          "outputs": {
+            "next": "n_32",
+            "rejected": "n_30"
+          }
+        },
+        {
+          "id": "n_30",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_35b81cdb9a6b",
+            "textKey": "client_dialogue.n_30",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_31"
+          }
+        },
+        {
+          "id": "n_31",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_32",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "cart_investigation",
+            "task": "t_50cd8e16a9e7",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "n_33"
+          }
+        },
+        {
+          "id": "n_33",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_35b81cdb9a6b",
+            "textKey": "client_dialogue.n_33",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_34"
+          }
+        },
+        {
+          "id": "n_34",
+          "type": "quest.add",
+          "params": {
+            "quest": "family_message"
+          },
+          "outputs": {
+            "next": "n_38",
+            "rejected": "n_36"
+          }
+        },
+        {
+          "id": "n_36",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_35b81cdb9a6b",
+            "textKey": "client_dialogue.n_36",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_37"
+          }
+        },
+        {
+          "id": "n_37",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_38",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_35b81cdb9a6b",
+            "textKey": "client_dialogue.n_38",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_39"
+          }
+        },
+        {
+          "id": "n_39",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_40",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "cart_investigation",
+                "task": "t_fed1c15b6148",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_41",
+            "no": "n_44"
+          }
+        },
+        {
+          "id": "n_41",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_35b81cdb9a6b",
+            "textKey": "client_dialogue.n_41",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_42"
+          }
+        },
+        {
+          "id": "n_42",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "cart_investigation",
+            "task": "t_fed1c15b6148",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "n_43"
+          }
+        },
+        {
+          "id": "n_43",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_44",
+          "type": "condition",
+          "params": {
+            "when": {
+              "questStatus": {
+                "quest": "cart_investigation",
+                "is": "finished"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_45",
+            "no": "n_48"
+          }
+        },
+        {
+          "id": "n_45",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_35b81cdb9a6b",
+            "textKey": "client_dialogue.n_45",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_46"
+          }
+        },
+        {
+          "id": "n_46",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_48",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_35b81cdb9a6b",
+            "textKey": "client_dialogue.n_48",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_49"
+          }
+        },
+        {
+          "id": "n_49",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        }
+      ]
+    },
+    {
+      "id": "guard_dialogue",
+      "entry": "n_52",
+      "settings": {
+        "blockPlayer": true,
+        "blockCamera": false
+      },
+      "nodes": [
+        {
+          "id": "n_52",
+          "type": "condition",
+          "params": {
+            "when": {
+              "questStatus": {
+                "quest": "cart_investigation",
+                "is": "notAdded"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_53",
+            "no": "n_55"
+          }
+        },
+        {
+          "id": "n_53",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_3873f845a696",
+            "textKey": "guard_dialogue.n_53",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_54"
+          }
+        },
+        {
+          "id": "n_54",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_55",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "cart_investigation",
+                "task": "t_8606334da200",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_56",
+            "no": "n_60"
+          }
+        },
+        {
+          "id": "n_56",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_3873f845a696",
+            "textKey": "guard_dialogue.n_56",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_57"
+          }
+        },
+        {
+          "id": "n_57",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "cart_investigation",
+            "task": "t_8606334da200",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "n_58"
+          }
+        },
+        {
+          "id": "n_58",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_60",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_3873f845a696",
+            "textKey": "guard_dialogue.n_60",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_61"
+          }
+        },
+        {
+          "id": "n_61",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        }
+      ]
+    },
+    {
+      "id": "carter_dialogue",
+      "entry": "n_64",
+      "settings": {
+        "blockPlayer": true,
+        "blockCamera": false
+      },
+      "nodes": [
+        {
+          "id": "n_64",
+          "type": "condition",
+          "params": {
+            "when": {
+              "questStatus": {
+                "quest": "cart_investigation",
+                "is": "notAdded"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_65",
+            "no": "n_67"
+          }
+        },
+        {
+          "id": "n_65",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_74fd45556b8c",
+            "textKey": "carter_dialogue.n_65",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_66"
+          }
+        },
+        {
+          "id": "n_66",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_67",
+          "type": "condition",
+          "params": {
+            "when": {
+              "any": [
+                {
+                  "taskStatus": {
+                    "quest": "cart_investigation",
+                    "task": "t_3ec9bd6828db",
+                    "is": "active"
+                  }
+                },
+                {
+                  "taskStatus": {
+                    "quest": "family_message",
+                    "task": "t_ce0cbaf944f7",
+                    "is": "active"
+                  }
+                }
+              ]
+            }
+          },
+          "outputs": {
+            "yes": "n_68",
+            "no": "n_76"
+          }
+        },
+        {
+          "id": "n_68",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "cart_investigation",
+                "task": "t_3ec9bd6828db",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_69",
+            "no": "n_71"
+          }
+        },
+        {
+          "id": "n_69",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_74fd45556b8c",
+            "textKey": "carter_dialogue.n_69",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_70"
+          }
+        },
+        {
+          "id": "n_70",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "cart_investigation",
+            "task": "t_3ec9bd6828db",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "n_71"
+          }
+        },
+        {
+          "id": "n_71",
+          "type": "condition",
+          "params": {
+            "when": {
+              "taskStatus": {
+                "quest": "family_message",
+                "task": "t_ce0cbaf944f7",
+                "is": "active"
+              }
+            }
+          },
+          "outputs": {
+            "yes": "n_72",
+            "no": "n_74"
+          }
+        },
+        {
+          "id": "n_72",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_74fd45556b8c",
+            "textKey": "carter_dialogue.n_72",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_73"
+          }
+        },
+        {
+          "id": "n_73",
+          "type": "task.setStatus",
+          "params": {
+            "quest": "family_message",
+            "task": "t_ce0cbaf944f7",
+            "status": "finished"
+          },
+          "outputs": {
+            "next": "n_74"
+          }
+        },
+        {
+          "id": "n_74",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        },
+        {
+          "id": "n_76",
+          "type": "dialogue",
+          "params": {
+            "speaker": "a_74fd45556b8c",
+            "textKey": "carter_dialogue.n_76",
+            "waitForClose": true
+          },
+          "outputs": {
+            "next": "n_77"
+          }
+        },
+        {
+          "id": "n_77",
+          "type": "end",
+          "params": {
+            "result": "completed"
+          },
+          "outputs": {}
+        }
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "id": "bind_client_dialogue",
+      "bindingKey": "actor:a_35b81cdb9a6b",
+      "enabledWhen": {
+        "always": true
+      },
+      "interaction": {
+        "graph": "client_dialogue",
+        "trigger": "interact",
+        "profileRef": "playground_interact",
+        "reentry": "ignoreWhileRunning"
+      }
+    },
+    {
+      "id": "bind_guard_dialogue",
+      "bindingKey": "actor:a_3873f845a696",
+      "enabledWhen": {
+        "always": true
+      },
+      "interaction": {
+        "graph": "guard_dialogue",
+        "trigger": "interact",
+        "profileRef": "playground_interact",
+        "reentry": "ignoreWhileRunning"
+      }
+    },
+    {
+      "id": "bind_carter_dialogue",
+      "bindingKey": "actor:a_74fd45556b8c",
+      "enabledWhen": {
+        "always": true
+      },
+      "interaction": {
+        "graph": "carter_dialogue",
+        "trigger": "interact",
+        "profileRef": "playground_interact",
+        "reentry": "ignoreWhileRunning"
+      }
+    }
+  ],
+  "texts": {
+    "cart_investigation.title": "货车调查",
+    "t_50cd8e16a9e7.title": "接取调查",
+    "t_8606334da200.title": "询问镇口守卫",
+    "t_3ec9bd6828db.title": "询问车夫",
+    "t_fed1c15b6148.title": "回报线索",
+    "family_message.title": "家里的口信",
+    "t_ce0cbaf944f7.title": "送达口信",
+    "client_dialogue.n_48": "麻烦先问过镇口守卫和车夫，问完再回来。",
+    "client_dialogue.n_45": "谢谢你帮我查清了货车改道的消息。",
+    "client_dialogue.n_41": "你问过守卫和车夫了？守卫说南边的桥坏了，货车往北去了；车夫说他们改走北路，绕远但没遇到强盗。太好了，感谢你。这是报酬。",
+    "client_dialogue.n_38": "先问谁都可以，问完两个人再回来告诉我。",
+    "client_dialogue.n_36": "口信的事就拜托了。",
+    "client_dialogue.n_33": "还有，麻烦给车夫带句话：家里一切平安。",
+    "client_dialogue.n_30": "你已经接下了这个调查。",
+    "client_dialogue.n_27": "货车迟迟未归，我有些担心。你能帮我问问镇口守卫和车夫吗？",
+    "guard_dialogue.n_60": "我知道的都说了。",
+    "guard_dialogue.n_56": "南边的桥昨天被冲坏了，我看到货车往北去了。",
+    "guard_dialogue.n_53": "你好，旅行者。",
+    "carter_dialogue.n_76": "你好，旅行者。",
+    "carter_dialogue.n_72": "你带来家里一切平安的口信，谢谢你，我知道了。",
+    "carter_dialogue.n_69": "他们改走北路，只是绕远，没有遇到强盗。",
+    "carter_dialogue.n_65": "你好，旅行者。"
+  },
+  "spatial": {
+    "actors": [
+      {
+        "id": "a_d8f5088468cc",
+        "name": "镇口",
+        "bindingKey": "world.witch_town"
+      },
+      {
+        "id": "a_35b81cdb9a6b",
+        "name": "委托人",
+        "prefabRef": "worker",
+        "spawn": {
+          "anchor": "a_d8f5088468cc",
+          "offset": [
+            2,
+            0,
+            3
+          ]
+        }
+      },
+      {
+        "id": "a_3873f845a696",
+        "name": "镇口守卫",
+        "prefabRef": "knight",
+        "spawn": {
+          "anchor": "a_d8f5088468cc",
+          "offset": [
+            -3,
+            0,
+            5
+          ]
+        }
+      },
+      {
+        "id": "a_74fd45556b8c",
+        "name": "车夫",
+        "prefabRef": "worker",
+        "spawn": {
+          "anchor": "a_d8f5088468cc",
+          "offset": [
+            4,
+            0,
+            -2
+          ]
+        }
+      }
+    ],
+    "regions": [],
+    "points": []
+  }
+}
