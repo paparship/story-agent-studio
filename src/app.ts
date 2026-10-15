@@ -45,7 +45,7 @@ async function start(id: string, message: string, provider?: Provider, answer = 
   if (controllers.has(id)) throw Error('当前故事正在生成');
   const c = new AbortController(); controllers.set(id, c);
   const execute = async () => {
-    try { await store.update(id, null, w => { w.status = 'running'; }); let ready: Promise<ModelClient> | undefined; const client: ModelClient = { complete: async (...args) => { ready ??= model(provider); return (await ready).complete(...args); } }; const runner = new WorkflowRunner(store, client, emit); await runner.run(id, message, c.signal, answer); }
+    try { let ready: Promise<ModelClient> | undefined; const client: ModelClient = { complete: async (...args) => { ready ??= model(provider); return (await ready).complete(...args); } }; const runner = new WorkflowRunner(store, client, emit); await runner.run(id, message, c.signal, answer); }
     catch (e) { const error = e instanceof Error ? e.message : '生成失败'; await store.update(id, null, w => { w.status = 'failed'; w.chat.push({ role: 'assistant', text: error }); }); emit(id, { kind: 'run_status', status: 'failed', error }); }
     finally { controllers.delete(id); }
   };

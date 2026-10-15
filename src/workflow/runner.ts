@@ -36,7 +36,7 @@ export class WorkflowRunner {
     await this.chat(id, { role: 'user', type: 'user', text: message });
     const initial = await this.store.get(id);
     const operation = Object.keys(initial.saved).length ? 'assistant' : initial.kind === 'main' ? 'generate_main' : 'generate_side';
-    await this.chat(id, { role: 'workflow', status: 'running', operation, previous_status: initial.status, workflow_type: initial.kind, title: operation === 'assistant' ? '正在阅读当前故事…' : initial.kind === 'main' ? '主线章节生成' : '支线故事生成', stage_start: initial.stages.length });
+    await this.chat(id, { role: 'workflow', status: 'running', operation, previous_status: initial.status === 'running' && Object.keys(initial.saved).length ? 'compiled' : initial.status, workflow_type: initial.kind, title: operation === 'assistant' ? '正在阅读当前故事…' : initial.kind === 'main' ? '主线章节生成' : '支线故事生成', stage_start: initial.stages.length });
     await this.status(id, 'running');
     try {
       let w = await this.store.get(id);
